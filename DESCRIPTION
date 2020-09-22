@@ -1,0 +1,21 @@
+Package: spice
+Title: SPICE: Spanning tree based inference of co-expression networks
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Ashis",
+           family = "Saha",
+           role = c("aut", "cre"),
+           email = "alorchhota@gmail.com",
+           comment = c(ORCID = "0000-0003-3203-2114"))
+Description: This package contains functions to reconstruct and evaluate co-expression networks.
+Depends: R (>= 4.0)
+biocViews:
+Imports: Rdpack, edgeR, STRINGdb, miscutil, PRROC, reshape2, limma, MASS, Rcpp
+LinkingTo: Rcpp
+Remotes: github::alorchhota/autil/miscutil
+RdMacros: Rdpack
+License: `use_mit_license()`
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
