@@ -54,7 +54,6 @@ spice <- function(expr,
                   adjust.clr = F,
                   seed = NULL,
                   verbose = F){
-  suppressMessages(require('miscutil'))
   suppressMessages(require('parallel'))
   suppressMessages(require('WGCNA'))
   suppressMessages(require('minet'))
@@ -147,15 +146,13 @@ spice <- function(expr,
 
   get_pairwise_assoc_per_iteraction <- function(it, frac.row, frac.col, use.keep.mat = F, verbose = F, seed = NULL){
     verbose_print(sprintf('spice iteration# %d', it), verbose = verbose)
+
+    ### sample expression data
     if(!is.null(seed))
       set.seed(seed * 1000 + it)
-    sampled_expr = miscutil::sample_df(x = expr_df,
-                                       size.row = frac.row * 100,
-                                       size.col = frac.col * 100,
-                                       unit = 'percent',
-                                       replace.row = F,
-                                       replace.col = F)
-    sampled_expr = sampled_expr[sample(rownames(sampled_expr), size = nrow(sampled_expr), replace = F),,drop=F]
+    sampled_rows = sample(x = seq_len(nrow(expr_df)), size = round(nrow(expr_df) * frac.row), replace = F)
+    sampled_cols = sample(x = seq_len(ncol(expr_df)), size = round(ncol(expr_df) * frac.col), replace = F)
+    sampled_expr = expr_df[sampled_rows, sampled_cols, drop = F]
 
     ### compute pairwise similarity
     expr_sim = get_expr_similarity(expr_df = sampled_expr, method = method)
@@ -190,6 +187,7 @@ spice <- function(expr,
     rm("wgcna.rank")
     tmp = gc(verbose = F)
 
+    ### update spanning-tree rank-prod
     E(sampled_mst)$weight = 1 - abs(E(sampled_mst)$weight)  # convert correlation (or normalized mutual information) to distance
     sampled_distances = distances(sampled_mst)
     spanningtree.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
@@ -208,6 +206,7 @@ spice <- function(expr,
     return(NA)
   }
 
+  ### run iterations
   if(n.cores == 0){
     for(it in seq_len(iter)){
       get_pairwise_assoc_per_iteraction(it, frac.row=frac.row, frac.col=frac.col, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
@@ -220,7 +219,6 @@ spice <- function(expr,
     }
     on.exit(parallel::stopCluster(cl))
     tmp <- clusterEvalQ(cl, {
-      suppressMessages(require("miscutil"))
       suppressMessages(require("flock"))
       suppressMessages(require("data.table"))
       suppressMessages(require("igraph"))
@@ -240,11 +238,13 @@ spice <- function(expr,
     tmp = gc(verbose = F)
   }
 
+  ### compute rank.prod from aggregated iterations
   #rank_products = exp(rankprod_matrix[,1] / rankprod_matrix[,2])
   rank_products = get_rankprod_vector_from_matrix(rankprod_matrix)
   rm("rankprod_matrix")
   tmp = gc(verbose = F)
 
+  ### build network matrix based on rank-products
   net = matrix(0, nrow = nrow(expr_df), ncol = nrow(expr_df), dimnames = list(rownames(expr_df), rownames(expr_df)))
   max_possible_rank = choose(round(nrow(expr_df) * frac.row), 2)
   if(weight.method == 'inverse.rank'){
@@ -261,8 +261,8 @@ spice <- function(expr,
   set_diag(net, 1)
   tmp = gc(verbose = F)
 
+  ### adjust weights by powering them, similar to WGCNA scale-free thresholding
   if(adjust.weight == T){
-    ### adjust weights by powering them, similar to WGCNA scale-free thresholding
     scale_free_stats = sapply(powerVector, function(cur_power){
       power_net = net ^ cur_power
       connectivities = rowSums(power_net, na.rm = T) - 1
@@ -281,6 +281,7 @@ spice <- function(expr,
     tmp = gc(verbose = F)
   }
 
+  ### make network sparse using minet::clr
   if(adjust.clr == T){
     net = clr(net, skipDiagonal = T)
     tmp = gc(verbose = F)
