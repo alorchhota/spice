@@ -6,14 +6,15 @@
 using namespace Rcpp;
 
 // kruskal_mst_c
-DataFrame kruskal_mst_c(NumericMatrix x, const bool maximum);
-RcppExport SEXP _spice_kruskal_mst_c(SEXP xSEXP, SEXP maximumSEXP) {
+DataFrame kruskal_mst_c(const NumericMatrix x, const bool maximum, const bool verbose);
+RcppExport SEXP _spice_kruskal_mst_c(SEXP xSEXP, SEXP maximumSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix >::type x(xSEXP);
     Rcpp::traits::input_parameter< const bool >::type maximum(maximumSEXP);
-    rcpp_result_gen = Rcpp::wrap(kruskal_mst_c(x, maximum));
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(kruskal_mst_c(x, maximum, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -122,7 +123,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_spice_kruskal_mst_c", (DL_FUNC) &_spice_kruskal_mst_c, 2},
+    {"_spice_kruskal_mst_c", (DL_FUNC) &_spice_kruskal_mst_c, 3},
     {"_spice_make_symmetric", (DL_FUNC) &_spice_make_symmetric, 2},
     {"_spice_get_lower_triangle_vector", (DL_FUNC) &_spice_get_lower_triangle_vector, 3},
     {"_spice_set_lower_triangle_vector", (DL_FUNC) &_spice_set_lower_triangle_vector, 3},

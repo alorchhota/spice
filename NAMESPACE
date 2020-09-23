@@ -2,4 +2,3 @@
 useDynLib(spice)
 importFrom(Rcpp, evalCpp)
 export(spice)
-export(kruskal_mst_c)

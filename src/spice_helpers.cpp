@@ -1,7 +1,6 @@
 #include <Rcpp.h>
 #include <cmath>
 using namespace Rcpp;
-#include <typeinfo>
 
 // [[Rcpp::export]]
 void update_rankprod_matrix(NumericMatrix rankprod, const NumericVector ranks){
@@ -15,23 +14,6 @@ void update_rankprod_matrix(NumericMatrix rankprod, const NumericVector ranks){
     rankprod.at(i,0) = rankprod.at(i,0) + log(cur_rank);
     rankprod.at(i,1) = rankprod.at(i,1) + 1;
   }
-}
-
-template<typename K, typename V>
-void print_map(std::map<K,V> const &m)
-{
-  for (auto const& pair: m) {
-    std::cout << "{" << pair.first << ": " << pair.second << "}\n";
-  }
-}
-
-template<typename T>
-void print_vector(std::vector<T> const v){
-  for(typename std::vector<T>::iterator i=v.begin(); i!=v.end(); i++){
-    std::cout << *i << " ";
-  }
-  std::cout << std::endl;
-
 }
 
 // [[Rcpp::export]]
@@ -82,21 +64,17 @@ NumericVector from_sampled_assoc_matrix_to_all_assoc_vector(
   NumericVector assoc_vec(n_genes * (n_genes-1)/2, NA_REAL);    // init to NA
   long vidx = -1;
   for(long j=0; j<n_genes; j++){
-    // Rcout << "starting column: " << j << std::endl;
     long s_j = all_to_sampled_assoc_col_index[j];
     if(s_j < 0){
       vidx += (n_genes - j -1);
       continue;
     }
     for(long i=j+1; i<n_genes; i++){
-      // Rcout << "row: " << i << std::endl;
       long s_i = all_to_sampled_assoc_row_index[i];
       if(s_i < 0){
         vidx ++;
         continue;
       }
-      // Rcout << "(i,j):" << i << ", " << j << std::endl;
-      // Rcout << "(s_i,s_j):" << s_i << ", " << s_j << std::endl;
       assoc_vec(++vidx) = sampled_assoc(s_i,s_j);
     }
   }
@@ -108,7 +86,7 @@ NumericVector from_sampled_assoc_matrix_to_all_assoc_vector(
       *it = 1.0-*it/max_val;
     }
   }
-  //Rcout << "max(0,-Inf):" << Rcpp::max(NumericVector::create(0, R_NegInf)) << "\n";
+
   return assoc_vec;
 }
 

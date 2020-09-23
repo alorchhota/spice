@@ -8,7 +8,7 @@ spice(
   expr,
   method = "pearson",
   iter = 100,
-  frac.row = 1,
+  frac.row = 0.8,
   frac.col = 0.8,
   n.cores = 1,
   rank.ties = "average",
@@ -67,16 +67,15 @@ Returns a matrix representing a co-expression network.
 This function reconstructs a co-expression network from gene expression profiles.
 }
 \details{
-Note: higher values in \code{net} should correspond to higher confidence in the edge. If the sign of values mean positive or negative association between genes, you probably should provide absolute values.
-
-This function does not yet handle directed networks.
+The rows of \code{expr} must have names.
 }
 \examples{
-genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2', 'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
-dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = (dummy_net + t(dummy_net))/2 # symmetric undirected nework
-cor_res = coexpression_ppi_cor(net = dummy_net)
-print(sprintf('Pearson r: \%s, p: \%s', cor_res$pearson$estimate, cor_res$pearson$p.value))
-print(sprintf('Spearman roh: \%s, p: \%s', cor_res$spearman$estimate, cor_res$spearman$p.value))
-print(sprintf('Kendall tau: \%s, p: \%s', cor_res$kendall$estimate, cor_res$kendall$p.value))
+n_gene = 10
+n_sample = 100
+expr = matrix(rnorm(n_gene * n_sample),
+              nrow = n_gene,
+              ncol = n_sample,
+              dimnames = list(sprintf("Gene\%s", seq_len(n_gene)),
+                              sprintf("Sample\%s", seq_len(n_sample))))
+spice_net = spice(expr, iter = 10, verbose = T)
 }

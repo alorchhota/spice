@@ -10,7 +10,7 @@ Authors@R:
 Description: This package contains functions to reconstruct and evaluate co-expression networks.
 Depends: R (>= 4.0)
 biocViews:
-Imports: Rdpack, edgeR, STRINGdb, miscutil, PRROC, reshape2, limma, MASS, Rcpp
+Imports: Rdpack, miscutil, Rcpp, parallel, WGCNA, minet, data.table, foreach, igraph, SharedObject, doParallel, flock, infotheo
 LinkingTo: Rcpp
 Remotes: github::alorchhota/autil/miscutil
 RdMacros: Rdpack
