@@ -55,7 +55,6 @@ spice <- function(expr,
                   seed = NULL,
                   verbose = F){
   suppressMessages(require('parallel'))
-  suppressMessages(require('WGCNA'))
   suppressMessages(require('minet'))
   suppressMessages(require('data.table'))
   suppressMessages(require('foreach'))
@@ -263,13 +262,31 @@ spice <- function(expr,
 
   ### adjust weights by powering them, similar to WGCNA scale-free thresholding
   if(adjust.weight == T){
+    scale_free_fit <- function(k, nBreaks = 10){
+      # this function was adapted from WGCNA::scaleFreeFitIndex()
+      discretized.k = cut(k, nBreaks)       # which bin each degree(connectivity) falls in
+      dk = tapply(k, discretized.k, mean)   # average degree in each bin
+      p.dk = as.vector(tapply(k, discretized.k, length)/length(k))     # probability of each bin
+      # for empty bins, use degree=midpoint and prob=0
+      breaks1 = seq(from = min(k), to = max(k), length = nBreaks + 1)
+      midpoints = (breaks1[1:nBreaks] + breaks1[2:(nBreaks+1)])/2
+      dk = ifelse(is.na(dk), midpoints, dk)
+      dk = ifelse(dk == 0, midpoints, dk)
+      p.dk = ifelse(is.na(p.dk), 0, p.dk)
+      # fit log(p.dk) ~ log(dk)
+      log.dk = as.vector(log10(dk))
+      log.p.dk = as.numeric(log10(p.dk + 1e-9))
+      lm1 = lm(log.p.dk ~ log.dk)
+      return(list(rsquared = summary(lm1)$r.squared,
+                  slope = summary(lm1)$coefficients[2, 1]))
+    }
     scale_free_stats = sapply(powerVector, function(cur_power){
       power_net = net ^ cur_power
       connectivities = rowSums(power_net, na.rm = T) - 1
       rm("power_net")
       tmp = gc(verbose = F)
-      SFT1 = scaleFreeFitIndex(k = connectivities, nBreaks = nBreaks, removeFirst = removeFirst)
-      return(list(Rsquared.SFT=SFT1$Rsquared.SFT, slope.SFT=SFT1$slope.SFT))
+      sff = scale_free_fit(k = connectivities, nBreaks = nBreaks)
+      return(list(rsquared=sff$rsquared, slope=sff$slope))
     })
     rsquares = as.numeric(scale_free_stats[1,])
     rsquare_cut = min(max(rsquares), RsquaredCut)
