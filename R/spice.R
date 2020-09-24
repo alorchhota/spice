@@ -206,7 +206,7 @@ spice <- function(expr,
   }
 
   ### run iterations
-  if(n.cores == 0){
+  if(n.cores == 1){
     for(it in seq_len(iter)){
       get_pairwise_assoc_per_iteraction(it, frac.row=frac.row, frac.col=frac.col, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
     }
