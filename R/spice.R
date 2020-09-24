@@ -61,6 +61,26 @@ spice <- function(expr,
                   adjust.clr = F,
                   seed = NULL,
                   verbose = F){
+
+  ### check parameters
+  stopifnot(is.matrix(expr) || is.data.frame(expr))
+  stopifnot(nrow(expr) > 1 && ncol(expr) > 1)
+  stopifnot(length(unique(rownames(expr))) == nrow(expr))
+  stopifnot(method %in% c('spearman', 'pearson', 'mi.empirical', 'mi.spearman', 'mi.pearson'))
+  stopifnot(is.numeric(iter) && iter >= 1)
+  stopifnot(is.numeric(frac.gene) && frac.gene > 0 && frac.gene <= 1)
+  stopifnot(is.numeric(frac.sample) && frac.sample > 0 && frac.sample <= 1)
+  stopifnot(is.numeric(n.cores) && n.cores >= 1)
+  stopifnot(rank.ties %in% c("average", "first", "last", "random", "max", "min", "dense"))
+  stopifnot(is.null(filter.mat) || (is.matrix(filter.mat) && setequal(rownames(filter.mat), rownames(expr)) && setequal(colnames(filter.mat), rownames(expr))))
+  stopifnot(weight.method %in% c('inverse.rank', 'qnorm'))
+  if(adjust.weight == T){
+    stopifnot(is.numeric(adjust.weight.powers))
+    stopifnot(is.numeric(adjust.weight.rsquared))
+    stopifnot(is.numeric(adjust.weight.bins) && adjust.weight.bins>=2)
+  }
+
+  ### load required packages
   suppressMessages(require('parallel'))
   suppressMessages(require('minet'))
   suppressMessages(require('data.table'))
@@ -70,9 +90,7 @@ spice <- function(expr,
   suppressMessages(require('doParallel'))
   suppressMessages(require('flock'))
 
-  stopifnot(method %in% c('spearman', 'pearson', 'mi.empirical', 'mi.spearman', 'mi.pearson'))
-  stopifnot(weight.method %in% c('inverse.rank', 'qnorm'))
-
+  ### initialize variables
   rankprod_matrix = matrix(data = 0, nrow = choose(nrow(expr), 2), ncol = 2)
   rankprod_matrix = share(rankprod_matrix, copyOnWrite=F)
   tmp = gc(verbose = F)
