@@ -8,53 +8,58 @@ spice(
   expr,
   method = "pearson",
   iter = 100,
-  frac.row = 0.8,
-  frac.col = 0.8,
+  frac.gene = 0.8,
+  frac.sample = 0.8,
   n.cores = 1,
   rank.ties = "average",
   filter.mat = NULL,
   weight.method = "qnorm",
   adjust.weight = T,
-  powerVector = c(seq(1, 10, by = 1), seq(12, 20, by = 2)),
-  RsquaredCut = 0.8,
-  removeFirst = FALSE,
-  nBreaks = 10,
+  adjust.weight.powers = c(seq(1, 10, by = 1), seq(12, 20, by = 2)),
+  adjust.weight.rsquared = 0.8,
+  adjust.weight.bins = 10,
   adjust.clr = F,
   seed = NULL,
   verbose = F
 )
 }
 \arguments{
-\item{expr}{data.frame or matrix. Processed gene expression data (gene x sample). See details.}
+\item{expr}{matrix or data.frame. Processed gene expression data (gene x sample).
+The rows must have unique gene names.}
 
 \item{method}{a character string indicating how to compute association between a pair of genes.
 This must be one of "pearson" (default), "spearman", "mi.empirical", "mi.spearman", and "mi.pearson". See details.}
 
 \item{iter}{numeric. Number of iterations.}
 
-\item{frac.row}{numeric. Fraction of genes sampled without replacement in each iteration.}
+\item{frac.gene}{numeric. Fraction of genes used in each iteration.}
 
-\item{frac.col}{numeric. Fraction of samples sampled without replacement in each iteration.}
+\item{frac.sample}{numeric. Fraction of samples used in each iteration.}
 
 \item{n.cores}{numeric. The number of cores to use.}
 
-\item{rank.ties}{a character string indicating how ties are treated in ranking. Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}. For details, see \code{ties.method} parameter of the  \code{frank} function in  \code{data.table} package.}
+\item{rank.ties}{a character string indicating how ties are treated in ranking.
+Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}.
+For details, see \code{ties.method} parameter of \code{\link[data.table]{frank}}.}
 
-\item{filter.mat}{matrix or NULL. Which edges to exclude.}
+\item{filter.mat}{NULL or a gene x gene matrix indicating which edges to exclude.
+An edge is excluded if the corresponding entry is \code{TRUE} or greater than 0.
+Row and column names of the matrix must be same as \code{rownames(expr)}.}
 
-\item{weight.method}{a character string indicating how the weights are assigned. It must be either \code{"qnorm"} (default) or \code{"inverse.rank"}.}
+\item{weight.method}{a character string indicating how the weights are assigned.
+It must be either \code{"qnorm"} (default) or \code{"inverse.rank"}.}
 
 \item{adjust.weight}{logical. Should the weights be raised to a power to exhibit a scale-free topology.}
 
-\item{powerVector}{numeric vector. Powers for which the scale free topology fit indices are to be calculated.}
+\item{adjust.weight.powers}{numeric vector. Powers for which the scale free topology fit indices are to be calculated.}
 
-\item{RsquaredCut}{numeric. Desired minimum scale free topology fitting index R^2.}
+\item{adjust.weight.rsquared}{numeric. Desired minimum scale free topology fitting index R-squared.
+If no power achieves \code{adjust.weight.rsquared}, the power with the maximum R-squared is chosen.}
 
-\item{removeFirst}{logical. Should the first bin be removed from the connectivity histogram while computing scale-free topology fitting indices?}
+\item{adjust.weight.bins}{numeric. Number of bins in connectivity histograms used to compute scale-free fit indices.}
 
-\item{nBreaks}{numeric. Number of bins in connectivity histograms.}
-
-\item{adjust.clr}{logical. Should the network weights be adjusted using context likelihood or relatedness? See \code{minet::clr} for details.}
+\item{adjust.clr}{logical. Should the network weights be adjusted using context likelihood or relatedness?
+See \code{\link[minet]{clr}} for details.}
 
 \item{seed}{integer or NULL. Random number generator seed.}
 
@@ -67,7 +72,8 @@ Returns a matrix representing a co-expression network.
 This function reconstructs a co-expression network from gene expression profiles.
 }
 \details{
-The rows of \code{expr} must have names.
+The expression matrix \code{expr} is expected to be properly normalized, processed and free of batch effects.
+This function may run slow when there are missing values in \code{expr}.
 }
 \examples{
 n_gene = 10

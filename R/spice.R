@@ -1,27 +1,35 @@
 #' SPICE: Spanning tree based inference of co-expression networks
 #'
 #' This function reconstructs a co-expression network from gene expression profiles.
-#' @param expr data.frame or matrix. Processed gene expression data (gene x sample). See details.
+#' @param expr matrix or data.frame. Processed gene expression data (gene x sample).
+#' The rows must have unique gene names.
 #' @param method a character string indicating how to compute association between a pair of genes.
 #' This must be one of "pearson" (default), "spearman", "mi.empirical", "mi.spearman", and "mi.pearson". See details.
 #' @param iter numeric. Number of iterations.
-#' @param frac.row numeric. Fraction of genes sampled without replacement in each iteration.
-#' @param frac.col numeric. Fraction of samples sampled without replacement in each iteration.
+#' @param frac.gene numeric. Fraction of genes used in each iteration.
+#' @param frac.sample numeric. Fraction of samples used in each iteration.
 #' @param n.cores numeric. The number of cores to use.
-#' @param rank.ties a character string indicating how ties are treated in ranking. Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}. For details, see \code{ties.method} parameter of the  \code{frank} function in  \code{data.table} package.
-#' @param filter.mat  matrix or NULL. Which edges to exclude.
-#' @param weight.method a character string indicating how the weights are assigned. It must be either \code{"qnorm"} (default) or \code{"inverse.rank"}.
+#' @param rank.ties a character string indicating how ties are treated in ranking.
+#' Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}.
+#' For details, see \code{ties.method} parameter of \code{\link[data.table]{frank}}.
+#' @param filter.mat  NULL or a gene x gene matrix indicating which edges to exclude.
+#' An edge is excluded if the corresponding entry is \code{TRUE} or greater than 0.
+#' Row and column names of the matrix must be same as \code{rownames(expr)}.
+#' @param weight.method a character string indicating how the weights are assigned.
+#' It must be either \code{"qnorm"} (default) or \code{"inverse.rank"}.
 #' @param adjust.weight logical. Should the weights be raised to a power to exhibit a scale-free topology.
-#' @param powerVector numeric vector. Powers for which the scale free topology fit indices are to be calculated.
-#' @param RsquaredCut numeric. Desired minimum scale free topology fitting index R^2.
-#' @param removeFirst logical. Should the first bin be removed from the connectivity histogram while computing scale-free topology fitting indices?
-#' @param nBreaks numeric. Number of bins in connectivity histograms.
-#' @param adjust.clr logical. Should the network weights be adjusted using context likelihood or relatedness? See \code{minet::clr} for details.
+#' @param adjust.weight.powers numeric vector. Powers for which the scale free topology fit indices are to be calculated.
+#' @param adjust.weight.rsquared numeric. Desired minimum scale free topology fitting index R-squared.
+#' If no power achieves \code{adjust.weight.rsquared}, the power with the maximum R-squared is chosen.
+#' @param adjust.weight.bins numeric. Number of bins in connectivity histograms used to compute scale-free fit indices.
+#' @param adjust.clr logical. Should the network weights be adjusted using context likelihood or relatedness?
+#' See \code{\link[minet]{clr}} for details.
 #' @param seed integer or NULL. Random number generator seed.
 #' @param verbose logical or numeric. Print messages if verbose > 0.
 #'
 #' @details
-#' The rows of \code{expr} must have names.
+#' The expression matrix \code{expr} is expected to be properly normalized, processed and free of batch effects.
+#' This function may run slow when there are missing values in \code{expr}.
 #'
 #'
 #'
@@ -40,17 +48,16 @@
 spice <- function(expr,
                   method='pearson',
                   iter=100,
-                  frac.row = 0.8,
-                  frac.col= 0.8,
+                  frac.gene = 0.8,
+                  frac.sample= 0.8,
                   n.cores=1,
                   rank.ties = "average",
                   filter.mat = NULL,
                   weight.method='qnorm',
                   adjust.weight=T,
-                  powerVector = c(seq(1, 10, by = 1), seq(12, 20, by = 2)),
-                  RsquaredCut = 0.8,
-                  removeFirst = FALSE,
-                  nBreaks = 10,
+                  adjust.weight.powers = c(seq(1, 10, by = 1), seq(12, 20, by = 2)),
+                  adjust.weight.rsquared = 0.8,
+                  adjust.weight.bins = 10,
                   adjust.clr = F,
                   seed = NULL,
                   verbose = F){
@@ -143,14 +150,14 @@ spice <- function(expr,
     }
   }
 
-  get_pairwise_assoc_per_iteraction <- function(it, frac.row, frac.col, use.keep.mat = F, verbose = F, seed = NULL){
+  get_pairwise_assoc_per_iteraction <- function(it, frac.gene, frac.sample, use.keep.mat = F, verbose = F, seed = NULL){
     verbose_print(sprintf('spice iteration# %d', it), verbose = verbose)
 
     ### sample expression data
     if(!is.null(seed))
       set.seed(seed * 1000 + it)
-    sampled_rows = sample(x = seq_len(nrow(expr_df)), size = round(nrow(expr_df) * frac.row), replace = F)
-    sampled_cols = sample(x = seq_len(ncol(expr_df)), size = round(ncol(expr_df) * frac.col), replace = F)
+    sampled_rows = sample(x = seq_len(nrow(expr_df)), size = round(nrow(expr_df) * frac.gene), replace = F)
+    sampled_cols = sample(x = seq_len(ncol(expr_df)), size = round(ncol(expr_df) * frac.sample), replace = F)
     sampled_expr = expr_df[sampled_rows, sampled_cols, drop = F]
 
     ### compute pairwise similarity
@@ -208,7 +215,7 @@ spice <- function(expr,
   ### run iterations
   if(n.cores == 1){
     for(it in seq_len(iter)){
-      get_pairwise_assoc_per_iteraction(it, frac.row=frac.row, frac.col=frac.col, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
+      get_pairwise_assoc_per_iteraction(it, frac.gene=frac.gene, frac.sample=frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
     }
   } else {
     if(verbose>0){
@@ -232,7 +239,7 @@ spice <- function(expr,
 
     doParallel::registerDoParallel(cl)
     tmp <- foreach(it = seq_len(iter)) %dopar% {
-      get_pairwise_assoc_per_iteraction(it, frac.row, frac.col, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
+      get_pairwise_assoc_per_iteraction(it, frac.gene, frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
     }
     tmp = gc(verbose = F)
   }
@@ -245,7 +252,7 @@ spice <- function(expr,
 
   ### build network matrix based on rank-products
   net = matrix(0, nrow = nrow(expr_df), ncol = nrow(expr_df), dimnames = list(rownames(expr_df), rownames(expr_df)))
-  max_possible_rank = choose(round(nrow(expr_df) * frac.row), 2)
+  max_possible_rank = choose(round(nrow(expr_df) * frac.gene), 2)
   if(weight.method == 'inverse.rank'){
     set_lower_triangle_vector(net, 1.0/rank_products)   # small rankprod => high weight
   } else if(weight.method == 'qnorm') {
@@ -280,18 +287,18 @@ spice <- function(expr,
       return(list(rsquared = summary(lm1)$r.squared,
                   slope = summary(lm1)$coefficients[2, 1]))
     }
-    scale_free_stats = sapply(powerVector, function(cur_power){
+    scale_free_stats = sapply(adjust.weight.powers, function(cur_power){
       power_net = net ^ cur_power
       connectivities = rowSums(power_net, na.rm = T) - 1
       rm("power_net")
       tmp = gc(verbose = F)
-      sff = scale_free_fit(k = connectivities, nBreaks = nBreaks)
+      sff = scale_free_fit(k = connectivities, nBreaks = adjust.weight.bins)
       return(list(rsquared=sff$rsquared, slope=sff$slope))
     })
     rsquares = as.numeric(scale_free_stats[1,])
-    rsquare_cut = min(max(rsquares), RsquaredCut)
+    rsquare_cut = min(max(rsquares), adjust.weight.rsquared)
     estimated_power_idx = which(rsquares>=rsquare_cut, arr.ind = T)[1]
-    estimated_power = powerVector[estimated_power_idx]
+    estimated_power = adjust.weight.powers[estimated_power_idx]
     estimated_rsquare = rsquares[estimated_power_idx]
     verbose_print(sprintf("Estimated power: %f (R2=%.2f)", estimated_power, estimated_rsquare), verbose = verbose)
     net = net ^ estimated_power
