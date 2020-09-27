@@ -1,4 +1,5 @@
 #' SPICE: Spanning tree based inference of co-expression networks
+
 #'
 #' This function reconstructs a co-expression network from gene expression profiles.
 #' @param expr matrix or data.frame. Processed gene expression data (gene x sample).
@@ -35,6 +36,8 @@
 #'
 #' @return Returns a matrix representing a co-expression network.
 #' @export
+#' @rawNamespace useDynLib(spice)
+#' @rawNamespace importFrom(Rcpp, evalCpp)
 #' @examples
 #' n_gene = 10
 #' n_sample = 100
