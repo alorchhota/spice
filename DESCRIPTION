@@ -10,7 +10,8 @@ Authors@R:
 Description: This package contains functions to reconstruct and evaluate co-expression networks.
 Depends: R (>= 4.0)
 biocViews:
-Imports: Rdpack, Rcpp, parallel, minet, data.table, foreach, igraph, SharedObject, doParallel, flock, infotheo, PRROC
+Imports: Rdpack, Rcpp, parallel, minet, data.table, foreach, igraph, 
+         SharedObject, doParallel, flock, infotheo, PRROC, MASS
 LinkingTo: Rcpp
 RdMacros: Rdpack
 License: `use_mit_license()`
