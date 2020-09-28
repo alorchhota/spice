@@ -21,7 +21,9 @@ coexpression_shared_pathway_auc(
 between genes in a co-expression network.
 Gene names must be available as row and column names. See details.}
 
-\item{pathways}{list. List of pathways where each entry contains the genes in each pathway.}
+\item{pathways}{list. List of pathways where each entry contains the genes in each pathway.
+Pathway names may be provided as \code{names(pathways)}.
+If provided, pathway names must be unique.}
 
 \item{curve}{logical. Should the curves, required for plotting, be generated?}
 
@@ -33,6 +35,9 @@ Gene names must be available as row and column names. See details.}
 
 \item{dg.compute}{logical. Should the area under the precision-recall curve
 according to the interpolation of Davis and Goadrich be computed?}
+
+\item{na.rm}{logical. Should edges with \code{NA} weights be excluded?
+If FALSE, \code{net} cannot have any edge with \code{NA} weight.}
 
 \item{neg.treat}{character representing how negative values in \code{net} should be treated.
 Accepted values are \code{'none'}, \code{'warn'} and  \code{'error'}.

@@ -114,3 +114,14 @@ check_negative_values_of_net <- function(net, varname, neg.treat){
       raise_func(sprintf("%s has negative weight(s).", varname))
   }
 }
+
+check_pathways <- function(pathways, varname){
+  if(!is.list(pathways))
+    stop(sprintf("%s must be a list.", varname))
+  if(length(names(pathways)) > 0){
+    if(any(is.na(names(pathways))))
+      stop(sprintf("%s list cannot have any pathway with name=NA.", varname))
+    if(length(unique(names(pathways))) != length(pathways))
+      stop(sprintf("%s list must have no names or all unique names.", varname))
+  }
+}

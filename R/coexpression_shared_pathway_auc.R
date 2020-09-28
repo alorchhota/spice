@@ -11,6 +11,8 @@
 #' Gene names must be available as row and column names. See details.
 #'
 #' @param pathways list. List of pathways where each entry contains the genes in each pathway.
+#' Pathway names may be provided as \code{names(pathways)}.
+#' If provided, pathway names must be unique.
 #'
 #' @param neg.treat character representing how negative values in \code{net} should be treated.
 #' Accepted values are \code{'none'}, \code{'warn'} and  \code{'error'}.
@@ -24,7 +26,8 @@
 #' @param rand.compute logical. Should the are under the curve for a random classifier be computed?
 #' @param dg.compute logical. Should the area under the precision-recall curve
 #' according to the interpolation of Davis and Goadrich be computed?
-#'
+#' @param na.rm logical. Should edges with \code{NA} weights be excluded?
+#' If FALSE, \code{net} cannot have any edge with \code{NA} weight.
 #' @details
 #' Each value in \code{net} should represent the relative probability that
 #' the corresponding edge is true. In other words, larger values should
@@ -76,8 +79,7 @@ coexpression_shared_pathway_auc <- function(net, pathways,
   ### check arguments
   net = get_checked_coexpression_network(net = net, varname = "net", check.names = T, check.symmetry = T, check.na = !na.rm)
   check_negative_values_of_net(net = net, varname = "net", neg.treat = neg.treat)
-  if(!is.list(pathways))
-    stop("pathways must be a list.")
+  check_pathways(pathways = pathways, varname = "pathways")
 
   ### create shared pathway matrix
   shared_pathway_mat = matrix(0, nrow = nrow(net), ncol = ncol(net), dimnames = list(rownames(net), colnames(net)))
