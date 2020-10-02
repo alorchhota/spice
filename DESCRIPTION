@@ -11,7 +11,8 @@ Description: This package contains functions to reconstruct and evaluate co-expr
 Depends: R (>= 4.0)
 biocViews:
 Imports: Rdpack, Rcpp, parallel, minet, data.table, foreach, igraph, 
-         SharedObject, doParallel, flock, infotheo, PRROC, MASS
+         SharedObject, doParallel, flock, infotheo, PRROC, MASS,
+         STRINGdb, reshape2
 LinkingTo: Rcpp
 RdMacros: Rdpack
 License: `use_mit_license()`
