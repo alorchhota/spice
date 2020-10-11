@@ -64,8 +64,16 @@ get_string_ppi_matrix <- function(genes,
                              input_directory=string.dir)
 
   ### map gene names to string ids
-  bg_df = data.frame(gene = genes)
+  bg_df = data.frame(gene = genes, stringsAsFactors = F)
   bg_string_df = string_db$map( bg_df, 'gene', removeUnmappedRows = TRUE, quiet = T)
+
+  # gene names in bg_string_df may mismatch with given names because of upper-case/lower-case
+  # Use gene names without changing case-style.
+  bg_df$upper_gene = toupper(bg_df$gene)
+  bg_string_df$upper_gene = toupper(bg_string_df$gene)
+  bg_string_df = merge(bg_string_df, bg_df, by = "upper_gene", all.x = T, all.y = F, suffixes = c(".x", ""))
+  bg_string_df = bg_string_df[, c('gene', 'STRING_id'), drop = F]
+
   bg_string_ids = unique(bg_string_df$STRING_id)
   bg_genes = unique(bg_string_df$gene)
   if(length(bg_genes) < 2){
