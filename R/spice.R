@@ -171,7 +171,7 @@ spice <- function(expr,
     verbose_print(sprintf('spice iteration# %d', it), verbose = verbose)
 
     ### sample expression data
-    if(!is.null(seed))
+    if(!is.null(seed) && !is.na(seed) && is.finite(seed))
       set.seed(seed * 1000 + it)
     sampled_rows = sample(x = seq_len(nrow(expr_df)), size = round(nrow(expr_df) * frac.gene), replace = F)
     sampled_cols = sample(x = seq_len(ncol(expr_df)), size = round(ncol(expr_df) * frac.sample), replace = F)
