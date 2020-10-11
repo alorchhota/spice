@@ -89,19 +89,15 @@ spice <- function(expr,
   suppressMessages(require('data.table'))
   suppressMessages(require('foreach'))
   suppressMessages(require('igraph'))
-  suppressMessages(require('SharedObject'))
+  suppressMessages(require('bigmemory'))
   suppressMessages(require('doParallel'))
   suppressMessages(require('flock'))
 
-  ### initialize variables
-  rankprod_matrix = matrix(data = 0, nrow = choose(nrow(expr), 2), ncol = 2)
-  rankprod_matrix = share(rankprod_matrix, copyOnWrite=F)
-  tmp = gc(verbose = F)
 
+  ### initialize variables
+  rankprod_matrix = big.matrix(nrow = choose(nrow(expr), 2), ncol = 2, init = 0, type = "double")
   rankprod_lock = tempfile()
-  expr_df = share(as.matrix(expr))
-  rm("expr")
-  tmp = gc(verbose = F)
+  expr_df = expr
 
   keep.mat = NULL
   if(!is.null(filter.mat)){
@@ -209,7 +205,7 @@ spice <- function(expr,
     rm("wgcna.weights")
     tmp = gc(verbose = F)
     locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix, wgcna.rank)
+    update_rankprod_matrix(rankprod_matrix@address, wgcna.rank)
     flock::unlock(locked)
     rm("wgcna.rank")
     tmp = gc(verbose = F)
@@ -225,7 +221,7 @@ spice <- function(expr,
     rm("spanningtree.weights")
     tmp = gc(verbose = F)
     locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix, spanningtree.rank)
+    update_rankprod_matrix(rankprod_matrix@address, spanningtree.rank)
     flock::unlock(locked)
     rm("spanningtree.rank")
     tmp = gc(verbose = F)
@@ -244,7 +240,14 @@ spice <- function(expr,
     } else {
       cl <- parallel::makeCluster(n.cores)
     }
-    on.exit(parallel::stopCluster(cl))
+    on.exit({
+      parallel::stopCluster(cl)
+      if(exists('rankprod_matrix')){
+        # delete the big matrix and reclaim memory
+        rm('rankprod_matrix')
+        tmp = gc(verbose = F)
+      }
+    })
     tmp <- clusterEvalQ(cl, {
       suppressMessages(require("flock"))
       suppressMessages(require("data.table"))
@@ -267,7 +270,7 @@ spice <- function(expr,
 
   ### compute rank.prod from aggregated iterations
   #rank_products = exp(rankprod_matrix[,1] / rankprod_matrix[,2])
-  rank_products = get_rankprod_vector_from_matrix(rankprod_matrix)
+  rank_products = get_rankprod_vector_from_matrix(rankprod_matrix@address)
   rm("rankprod_matrix")
   tmp = gc(verbose = F)
 
@@ -334,7 +337,6 @@ spice <- function(expr,
 
   ### remove data before return
   unlink(rankprod_lock)
-  rm("expr_df")
   if(!is.null(keep.mat))
     rm(list = "keep.mat")
   tmp <- gc(verbose = F)
