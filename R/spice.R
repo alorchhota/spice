@@ -94,12 +94,17 @@ spice <- function(expr,
   suppressMessages(require('flock'))
 
   ### initialize variables
+  shared_lock_file = "~/.sharedobj.lock"
   rankprod_matrix = matrix(data = 0, nrow = choose(nrow(expr), 2), ncol = 2)
+  shared_lock = lock(path = shared_lock_file)
   rankprod_matrix = share(rankprod_matrix, copyOnWrite=F)
+  unlock(shared_lock)
   tmp = gc(verbose = F)
 
   rankprod_lock = tempfile()
+  shared_lock = lock(path = shared_lock_file)
   expr_df = share(as.matrix(expr))
+  unlock(shared_lock)
   rm("expr")
   tmp = gc(verbose = F)
 
