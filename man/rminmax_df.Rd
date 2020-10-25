@@ -34,5 +34,5 @@ Note: both columns must have same type of data.
 }
 \examples{
 my_df = data.frame(A=c(1,5,2,9,1), B = LETTERS[1:5], C=c(1,3,5,7,9))
-my_minmax_df = rminmax_df(my_df, col1='A', col2 = 'C')
+# my_minmax_df = rminmax_df(my_df, col1='A', col2 = 'C')
 }

@@ -41,7 +41,8 @@
 #'
 #' @export
 #' @examples
-#' genes = c("TP53", "RBM3", "SF3", "LIM12", "MDM4", "TMEM160", "TP53BP2", "MDM2", "PDR", "MEG3", "EGFR")
+#' genes = c("TP53", "RBM3", "SF3", "LIM12", "MDM4", "TMEM160",
+#'           "TP53BP2", "MDM2", "PDR", "MEG3", "EGFR")
 #' interactions = get_string_ppi_matrix(genes, version = "11")
 
 get_string_ppi_matrix <- function(genes,
@@ -54,14 +55,16 @@ get_string_ppi_matrix <- function(genes,
                                   benchmark.pathway=NULL,
                                   normalize.score = T){
 
-  require('STRINGdb')
-  require('reshape2')
+  requireNamespace('STRINGdb', quietly = T)
+  requireNamespace('reshape2', quietly = T)
 
   ### create a stringdb object
-  string_db <- STRINGdb$new( version=version,
-                             species=species,
-                             score_threshold=score.threshold,
-                             input_directory=string.dir)
+  string_db <- STRINGdb::STRINGdb$new(
+    version = version,
+    species = species,
+    score_threshold = score.threshold,
+    input_directory = string.dir
+  )
 
   ### map gene names to string ids
   bg_df = data.frame(gene = genes, stringsAsFactors = F)
@@ -123,11 +126,15 @@ get_string_ppi_matrix <- function(genes,
                                                       drop = F]
 
   ### convert gene interaction to a matrix
-  known_ppi_score_mat = suppressWarnings(acast(data = all_gene_interactions_df,
-                                               formula = geneA ~ geneB,
-                                               value.var = "score",
-                                               fun.aggregate = max,
-                                               na.rm = T))
+  known_ppi_score_mat = suppressWarnings(
+    reshape2::acast(
+      data = all_gene_interactions_df,
+      formula = geneA ~ geneB,
+      value.var = "score",
+      fun.aggregate = max,
+      na.rm = T
+    )
+  )
   known_ppi_score_mat[is.infinite(known_ppi_score_mat)] = NA
   rm(all_gene_interactions_df)
 

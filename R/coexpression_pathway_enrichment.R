@@ -72,9 +72,10 @@
 #'
 #' @export
 #' @examples
-#' genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2', 'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
+#' genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2',
+#'           'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
 #' dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 #' dummy_pathways = list(pathway1=c('TP53', 'RBM3', 'SF1', 'SF5'),
 #'                        pathway2=c('LIM12', 'MDM2', 'BCL2L1', 'TMEM160', 'ATM'),
 #'                        pathway3=c('EGFR', 'TP53', 'CD96', 'SRSF1', 'RBM14'))
@@ -92,7 +93,7 @@ coexpression_pathway_enrichment <- function(net, pathways,
                                             seed = NULL,
                                             na.rm = F,
                                             neg.treat = "error"){
-  suppressPackageStartupMessages(require(MASS))
+  requireNamespace('MASS', quietly = T)
   net = get_checked_coexpression_network(net = net, varname = "net", check.names = T, check.symmetry = T, check.na = !na.rm)
   check_negative_values_of_net(net = net, varname = "net", neg.treat = neg.treat)
   check_pathways(pathways = pathways, varname = "pathways")
@@ -126,7 +127,7 @@ coexpression_pathway_enrichment <- function(net, pathways,
       return(weight_sum)
     })
 
-    null_dist =  fitdistr(null_scores, densfun = 'normal')
+    null_dist =  MASS::fitdistr(null_scores, densfun = 'normal')
     null_mean = null_dist$estimate['mean']
     null_sd = null_dist$estimate['sd']
 
@@ -136,7 +137,7 @@ coexpression_pathway_enrichment <- function(net, pathways,
       p_genes = pathways[[pname]]
       observed_score = sum(net[p_genes, p_genes], na.rm = na.rm)/2
       empirical_p = (sum(null_scores >= observed_score)+1)/(length(null_scores)+1)
-      normal_p = 1 - pnorm(observed_score, mean = null_mean, sd = null_sd)
+      normal_p = 1 - stats::pnorm(observed_score, mean = null_mean, sd = null_sd)
       return(list(pathway = pname,
                   n.gene = plen,
                   null.mean = null_mean,
@@ -154,8 +155,8 @@ coexpression_pathway_enrichment <- function(net, pathways,
 
   all_pvalues_df = as.data.frame(do.call(rbind, args = all_pvalues), stringsAsFactors = F)
   if(nrow(all_pvalues_df) > 0){
-    all_pvalues_df$fdr = p.adjust(all_pvalues_df$p, method = 'BH')
-    all_pvalues_df$fdr.empirical = p.adjust(all_pvalues_df$p.empirical, method = 'BH')
+    all_pvalues_df$fdr = stats::p.adjust(all_pvalues_df$p, method = 'BH')
+    all_pvalues_df$fdr.empirical = stats::p.adjust(all_pvalues_df$p.empirical, method = 'BH')
   }
   return(all_pvalues_df)
 }

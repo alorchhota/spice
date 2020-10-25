@@ -79,10 +79,16 @@ Diagonal entries in the matrices are ignored.
 \examples{
 genes = sprintf("G\%d", 1:10)
 dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+dummy_net = abs((dummy_net + t(dummy_net))/2)                  # symmetric network
 dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
-auc_res = coexpression_known_interactions_auc(net = dummy_net, known = dummy_ppi, curve = T, max.compute = T, min.compute = T)
+dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))  # symmetric ppi
+auc_res = coexpression_known_interactions_auc(
+  net = dummy_net,
+  known = dummy_ppi,
+  curve = TRUE,
+  max.compute = TRUE,
+  min.compute = TRUE
+)
 print(sprintf('AUC under the precision-recall curve: \%s', auc_res$pr$auc.integral))
 print(sprintf('AUC under the ROC curve: \%s', auc_res$roc$auc))
 plot(auc_res$pr, max.plot = TRUE, min.plot = TRUE, fill.area = TRUE)

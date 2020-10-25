@@ -67,10 +67,15 @@
 #' @examples
 #' genes = sprintf("G%d", 1:10)
 #' dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 #' dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
-#' net_precision = coexpression_known_interactions_precision_at_top(net = dummy_net, known = dummy_ppi, n.top.edges = c(10, 30, NA), score.thresholds = c(0.25, 0.5))
+#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric ppi
+#' net_precision = coexpression_known_interactions_precision_at_top(
+#'   net = dummy_net,
+#'   known = dummy_ppi,
+#'   n.top.edges = c(10, 30, NA),
+#'   score.thresholds = c(0.25, 0.5)
+#' )
 #' print(net_precision)
 
 coexpression_known_interactions_precision_at_top <- function (net, known,
@@ -130,14 +135,14 @@ coexpression_known_interactions_precision_at_top <- function (net, known,
       sapply(score.thresholds, function(sth){
         # count the number of available true edges
         n_known = sum(ppi_score_values >= sth)
-        top_weight_threshold = quantile(net_weight_values, probs =  max(1 - n_known / length(net_weight_values), 0))
+        top_weight_threshold = stats::quantile(net_weight_values, probs =  max(1 - n_known / length(net_weight_values), 0))
         top_weight_index = net_weight_values >= top_weight_threshold
         n_known_at_top = sum(ppi_score_values[top_weight_index] >= sth)
         frac_known_at_top = n_known_at_top / sum(top_weight_index)
         return(frac_known_at_top)
       })
     } else{
-      top_weight_threshold = quantile(net_weight_values, probs =  max(1 - top / length(net_weight_values), 0))
+      top_weight_threshold = stats::quantile(net_weight_values, probs =  max(1 - top / length(net_weight_values), 0))
       top_weight_index = net_weight_values >= top_weight_threshold
       sapply(score.thresholds, function(sth){
         n_known_at_top = sum(ppi_score_values[top_weight_index] >= sth)

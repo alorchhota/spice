@@ -82,9 +82,14 @@ Diagonal entries in the matrices are ignored.
 \examples{
 genes = sprintf("G\%d", 1:10)
 dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
-net_precision = coexpression_known_interactions_precision_at_top(net = dummy_net, known = dummy_ppi, n.top.edges = c(10, 30, NA), score.thresholds = c(0.25, 0.5))
+dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric ppi
+net_precision = coexpression_known_interactions_precision_at_top(
+  net = dummy_net,
+  known = dummy_ppi,
+  n.top.edges = c(10, 30, NA),
+  score.thresholds = c(0.25, 0.5)
+)
 print(net_precision)
 }

@@ -90,9 +90,10 @@ Gene names must be unique.
 Diagonal entries are ignored.
 }
 \examples{
-genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2', 'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
+genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2',
+          'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
 dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 dummy_pathways = list(pathway1=c('TP53', 'RBM3', 'SF1', 'SF5'),
                        pathway2=c('LIM12', 'MDM2', 'BCL2L1', 'TMEM160', 'ATM'),
                        pathway3=c('EGFR', 'TP53', 'CD96', 'SRSF1', 'RBM14'))

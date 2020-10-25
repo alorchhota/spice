@@ -83,5 +83,5 @@ expr = matrix(rnorm(n_gene * n_sample),
               ncol = n_sample,
               dimnames = list(sprintf("Gene\%s", seq_len(n_gene)),
                               sprintf("Sample\%s", seq_len(n_sample))))
-spice_net = spice(expr, iter = 10, verbose = T)
+spice_net = spice(expr, iter = 10, verbose = TRUE)
 }
