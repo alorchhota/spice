@@ -95,17 +95,11 @@ spice <- function(expr,
   requireNamespace('flock', quietly = T)
 
   ### initialize variables
-  shared_lock_file = "~/.sharedobj.lock"
   rankprod_matrix = matrix(data = 0, nrow = choose(nrow(expr), 2), ncol = 2)
-  shared_lock = flock::lock(path = shared_lock_file)
   rankprod_matrix = SharedObject::share(rankprod_matrix, copyOnWrite=F)
-  flock::unlock(shared_lock)
-  tmp = gc(verbose = F)
 
   rankprod_lock = tempfile()
-  shared_lock = flock::lock(path = shared_lock_file)
   expr_df = SharedObject::share(as.matrix(expr))
-  flock::unlock(shared_lock)
   rm("expr")
   tmp = gc(verbose = F)
 
