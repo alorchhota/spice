@@ -78,12 +78,13 @@ Diagonal entries are ignored.
 require(msigdbr)
 msigdb_df = as.data.frame(msigdbr(species = "Homo sapiens", category = "H"))
 pathways = tapply(msigdb_df$human_gene_symbol, msigdb_df$gs_id, FUN = c)
-genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2', 'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
+genes = c('TP53', 'RBM3', 'SF3', 'LIM12', 'ATM', 'TMEM160', 'BCL2L1', 'MDM2',
+          'PDR', 'MEG3', 'EGFR', 'CD96', 'KEAP1', 'SRSF1', 'TSEN2')
 dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 auc_res = coexpression_shared_pathway_auc(net = dummy_net,
                                           pathways = pathways,
-                                          curve = T)
+                                          curve = TRUE)
 print(sprintf('AUC under the precision-recall curve: \%s', auc_res$pr$auc.integral))
 print(sprintf('AUC under the ROC curve: \%s', auc_res$roc$auc))
 plot(auc_res$pr)

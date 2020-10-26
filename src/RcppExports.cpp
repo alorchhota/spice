@@ -87,13 +87,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_rankprod_matrix
-void update_rankprod_matrix(SEXP rankprod_bigmem, const NumericVector ranks);
-RcppExport SEXP _spice_update_rankprod_matrix(SEXP rankprod_bigmemSEXP, SEXP ranksSEXP) {
+void update_rankprod_matrix(NumericMatrix rankprod, const NumericVector ranks);
+RcppExport SEXP _spice_update_rankprod_matrix(SEXP rankprodSEXP, SEXP ranksSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type rankprod_bigmem(rankprod_bigmemSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type rankprod(rankprodSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type ranks(ranksSEXP);
-    update_rankprod_matrix(rankprod_bigmem, ranks);
+    update_rankprod_matrix(rankprod, ranks);
     return R_NilValue;
 END_RCPP
 }
@@ -111,13 +111,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_rankprod_vector_from_matrix
-NumericVector get_rankprod_vector_from_matrix(SEXP rankprod_bigmem);
-RcppExport SEXP _spice_get_rankprod_vector_from_matrix(SEXP rankprod_bigmemSEXP) {
+NumericVector get_rankprod_vector_from_matrix(NumericMatrix rankprod);
+RcppExport SEXP _spice_get_rankprod_vector_from_matrix(SEXP rankprodSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type rankprod_bigmem(rankprod_bigmemSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_rankprod_vector_from_matrix(rankprod_bigmem));
+    Rcpp::traits::input_parameter< NumericMatrix >::type rankprod(rankprodSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_rankprod_vector_from_matrix(rankprod));
     return rcpp_result_gen;
 END_RCPP
 }

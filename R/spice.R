@@ -28,6 +28,8 @@
 #' @param seed integer or NULL. Random number generator seed.
 #' @param verbose logical or numeric. Print messages if verbose > 0.
 #'
+#' @importFrom foreach %dopar%
+#' @importFrom Rcpp evalCpp
 #' @details
 #' The expression matrix \code{expr} is expected to be properly normalized, processed and free of batch effects.
 #' This function may run slow when there are missing values in \code{expr}.
@@ -37,7 +39,6 @@
 #' @return Returns a matrix representing a co-expression network.
 #' @export
 #' @rawNamespace useDynLib(spice)
-#' @rawNamespace importFrom(Rcpp, evalCpp)
 #' @examples
 #' n_gene = 10
 #' n_sample = 100
@@ -46,7 +47,7 @@
 #'               ncol = n_sample,
 #'               dimnames = list(sprintf("Gene%s", seq_len(n_gene)),
 #'                               sprintf("Sample%s", seq_len(n_sample))))
-#' spice_net = spice(expr, iter = 10, verbose = T)
+#' spice_net = spice(expr, iter = 10, verbose = TRUE)
 
 spice <- function(expr,
                   method='pearson',
@@ -84,20 +85,23 @@ spice <- function(expr,
   }
 
   ### load required packages
-  suppressMessages(require('parallel'))
-  suppressMessages(require('minet'))
-  suppressMessages(require('data.table'))
-  suppressMessages(require('foreach'))
-  suppressMessages(require('igraph'))
-  suppressMessages(require('bigmemory'))
-  suppressMessages(require('doParallel'))
-  suppressMessages(require('flock'))
-
+  requireNamespace('parallel', quietly = T)
+  requireNamespace('minet', quietly = T)
+  requireNamespace('data.table', quietly = T)
+  requireNamespace('foreach', quietly = T)
+  requireNamespace('igraph', quietly = T)
+  requireNamespace('SharedObject', quietly = T)
+  requireNamespace('doParallel', quietly = T)
+  requireNamespace('flock', quietly = T)
 
   ### initialize variables
-  rankprod_matrix = big.matrix(nrow = choose(nrow(expr), 2), ncol = 2, init = 0, type = "double")
+  rankprod_matrix = matrix(data = 0, nrow = choose(nrow(expr), 2), ncol = 2)
+  rankprod_matrix = SharedObject::share(rankprod_matrix, copyOnWrite=F)
+
   rankprod_lock = tempfile()
-  expr_df = expr
+  expr_df = SharedObject::share(as.matrix(expr))
+  rm("expr")
+  tmp = gc(verbose = F)
 
   keep.mat = NULL
   if(!is.null(filter.mat)){
@@ -108,27 +112,27 @@ spice <- function(expr,
     keep.mat[filter_row_genes, filter_col_genes] = keep.mat[filter_row_genes, filter_col_genes] * (filter.mat[filter_row_genes, filter_col_genes] <= 0)
     keep.mat[filter_col_genes, filter_row_genes] = keep.mat[filter_col_genes, filter_row_genes] * (t(filter.mat[filter_row_genes, filter_col_genes]) <= 0)
     diag(keep.mat) <- T
-    keep.mat = share(keep.mat)
+    keep.mat = SharedObject::share(keep.mat)
     tmp = gc(verbose = F)
   }
 
   get_expr_similarity <- function(expr_df, method='spearman', disc='equalfreq', nbins=sqrt(ncol(expr_df))){
-    suppressMessages(require(infotheo))
+    requireNamespace('infotheo', quietly = T)
 
     stopifnot(method %in% c('spearman', 'pearson', 'mi.empirical', 'mi.pearson', 'mi.spearman'))
 
     if(method %in% c('spearman', 'pearson')){
       if(sum(!is.finite(as.matrix(expr_df))) >0 ){
-        pairwise.r = cor(t(expr_df), method = method, use = "pairwise.complete.obs")
+        pairwise.r = stats::cor(t(expr_df), method = method, use = "pairwise.complete.obs")
       } else {
-        pairwise.r = cor(t(expr_df), method = method)
+        pairwise.r = stats::cor(t(expr_df), method = method)
       }
       replace_NA_in_matrix(pairwise.r, value = 0)
       mi = abs(pairwise.r)
       rm("pairwise.r")
       tmp = gc(verbose = F)
     } else if(method %in% c('mi.empirical')){
-      suppressMessages(require(minet))
+      requireNamespace('minet', quietly = T)
       expr_df = as.data.frame(t(expr_df)) # convert to samples x genes matrix, required for build.mim()
       if(disc != 'none')
         expr_df = infotheo::discretize(expr_df, disc = disc, nbins = nbins)
@@ -136,8 +140,8 @@ spice <- function(expr,
       mi = minet::build.mim(dataset =  expr_df, estimator = method, disc = 'none')
 
       # normalize by sum of pairwise entropies
-      h = apply(expr_df, 2, entropy)
-      pairwise_h_sum = combn(h, 2, sum)
+      h = apply(expr_df, 2, infotheo::entropy)
+      pairwise_h_sum = utils::combn(h, 2, sum)
       pairwise_h_sum_mat = matrix(0, nrow=length(h), ncol=length(h), dimnames = list(names(h), names(h)))
       pairwise_h_sum_mat[lower.tri(pairwise_h_sum_mat)] = pairwise_h_sum
       diag(pairwise_h_sum_mat) = h
@@ -148,7 +152,7 @@ spice <- function(expr,
       rm("pairwise_h_sum_mat")
       tmp = gc(verbose = F)
     } else if(method %in% c('mi.pearson', 'mi.spearman')){
-      suppressMessages(require(minet))
+      requireNamespace('minet', quietly = T)
       expr_df = as.data.frame(t(expr_df)) # convert to samples x genes matrix, required for build.mim()
       mi.method = strsplit(method, split = "mi.")[[1]][2]
       mi = minet::build.mim(dataset =  expr_df, estimator = mi.method, disc = 'none')
@@ -192,7 +196,7 @@ spice <- function(expr,
     kmst_genes = rownames(expr_sim)
     kmst$from = kmst_genes[kmst$from]
     kmst$to = kmst_genes[kmst$to]
-    sampled_mst <- graph_from_data_frame(kmst, directed=FALSE, vertices=kmst_genes)
+    sampled_mst <- igraph::graph_from_data_frame(kmst, directed=FALSE, vertices=kmst_genes)
     rm(list=c("kmst"))
     tmp = gc(verbose = F)
 
@@ -205,14 +209,14 @@ spice <- function(expr,
     rm("wgcna.weights")
     tmp = gc(verbose = F)
     locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix@address, wgcna.rank)
+    update_rankprod_matrix(rankprod_matrix, wgcna.rank)
     flock::unlock(locked)
     rm("wgcna.rank")
     tmp = gc(verbose = F)
 
     ### update spanning-tree rank-prod
-    E(sampled_mst)$weight = 1 - abs(E(sampled_mst)$weight)  # convert correlation (or normalized mutual information) to distance
-    sampled_distances = distances(sampled_mst)
+    igraph::E(sampled_mst)$weight = 1 - abs(igraph::E(sampled_mst)$weight)  # convert correlation (or normalized mutual information) to distance
+    sampled_distances = igraph::distances(sampled_mst)
     spanningtree.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
       sampled_assoc = sampled_distances,
       all_genes = rownames(expr_df),
@@ -221,7 +225,7 @@ spice <- function(expr,
     rm("spanningtree.weights")
     tmp = gc(verbose = F)
     locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix@address, spanningtree.rank)
+    update_rankprod_matrix(rankprod_matrix, spanningtree.rank)
     flock::unlock(locked)
     rm("spanningtree.rank")
     tmp = gc(verbose = F)
@@ -240,18 +244,11 @@ spice <- function(expr,
     } else {
       cl <- parallel::makeCluster(n.cores)
     }
-    on.exit({
-      parallel::stopCluster(cl)
-      if(exists('rankprod_matrix')){
-        # delete the big matrix and reclaim memory
-        rm('rankprod_matrix')
-        tmp = gc(verbose = F)
-      }
-    })
-    tmp <- clusterEvalQ(cl, {
-      suppressMessages(require("flock"))
-      suppressMessages(require("data.table"))
-      suppressMessages(require("igraph"))
+    on.exit(parallel::stopCluster(cl))
+    tmp <- parallel::clusterEvalQ(cl, {
+      requireNamespace('flock', quietly = T)
+      requireNamespace('data.table', quietly = T)
+      requireNamespace('igraph', quietly = T)
     })
     shared_varlist = list( "get_pairwise_assoc_per_iteraction",
                            "expr_df",
@@ -259,10 +256,10 @@ spice <- function(expr,
                            "get_expr_similarity")
     if(!is.null(keep.mat))
       shared_varlist = append(shared_varlist, "keep.mat")
-    clusterExport(cl, varlist = shared_varlist, envir = environment())
+    parallel::clusterExport(cl, varlist = shared_varlist, envir = environment())
 
     doParallel::registerDoParallel(cl)
-    tmp <- foreach(it = seq_len(iter)) %dopar% {
+    tmp <- foreach::foreach(it = seq_len(iter)) %dopar% {
       get_pairwise_assoc_per_iteraction(it, frac.gene, frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
     }
     tmp = gc(verbose = F)
@@ -270,7 +267,7 @@ spice <- function(expr,
 
   ### compute rank.prod from aggregated iterations
   #rank_products = exp(rankprod_matrix[,1] / rankprod_matrix[,2])
-  rank_products = get_rankprod_vector_from_matrix(rankprod_matrix@address)
+  rank_products = get_rankprod_vector_from_matrix(rankprod_matrix)
   rm("rankprod_matrix")
   tmp = gc(verbose = F)
 
@@ -280,8 +277,8 @@ spice <- function(expr,
   if(weight.method == 'inverse.rank'){
     set_lower_triangle_vector(net, 1.0/rank_products)   # small rankprod => high weight
   } else if(weight.method == 'qnorm') {
-    wnorm = abs(qnorm(p=rank_products/(2*max_possible_rank))) # only left half of normal distribution
-    max_possible_wnorm = abs(qnorm(p=1/(2*max_possible_rank)))
+    wnorm = abs(stats::qnorm(p=rank_products/(2*max_possible_rank))) # only left half of normal distribution
+    max_possible_wnorm = abs(stats::qnorm(p=1/(2*max_possible_rank)))
     wnorm = wnorm / max_possible_wnorm
     set_lower_triangle_vector(net, wnorm)
     rm("wnorm")
@@ -307,7 +304,7 @@ spice <- function(expr,
       # fit log(p.dk) ~ log(dk)
       log.dk = as.vector(log10(dk))
       log.p.dk = as.numeric(log10(p.dk + 1e-9))
-      lm1 = lm(log.p.dk ~ log.dk)
+      lm1 = stats::lm(log.p.dk ~ log.dk)
       return(list(rsquared = summary(lm1)$r.squared,
                   slope = summary(lm1)$coefficients[2, 1]))
     }
@@ -331,12 +328,13 @@ spice <- function(expr,
 
   ### make network sparse using minet::clr
   if(adjust.clr == T){
-    net = clr(net, skipDiagonal = T)
+    net = minet::clr(net, skipDiagonal = T)
     tmp = gc(verbose = F)
   }
 
   ### remove data before return
   unlink(rankprod_lock)
+  rm("expr_df")
   if(!is.null(keep.mat))
     rm(list = "keep.mat")
   tmp <- gc(verbose = F)

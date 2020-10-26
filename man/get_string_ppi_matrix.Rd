@@ -59,6 +59,7 @@ within a given set of genes.
 Note: all the genes are expected as HGNC gene symbols.
 }
 \examples{
-genes = c("TP53", "RBM3", "SF3", "LIM12", "MDM4", "TMEM160", "TP53BP2", "MDM2", "PDR", "MEG3", "EGFR")
+genes = c("TP53", "RBM3", "SF3", "LIM12", "MDM4", "TMEM160",
+          "TP53BP2", "MDM2", "PDR", "MEG3", "EGFR")
 interactions = get_string_ppi_matrix(genes, version = "11")
 }

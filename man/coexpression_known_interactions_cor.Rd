@@ -66,9 +66,11 @@ Diagonal entries in the matrices are ignored.
 \examples{
 genes = sprintf("G\%d", 1:10)
 dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
-cor_res = coexpression_known_interactions_cor(net = dummy_net, known = dummy_ppi, method = "spearman")
+dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric ppi
+cor_res = coexpression_known_interactions_cor(net = dummy_net,
+                                              known = dummy_ppi,
+                                              method = "spearman")
 print(sprintf('Spearman roh: \%g, p.value: \%s', cor_res$estimate, cor_res$p.value))
 }

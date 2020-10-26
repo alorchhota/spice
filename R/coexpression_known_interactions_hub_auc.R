@@ -62,9 +62,9 @@
 #' @examples
 #' genes = sprintf("G%d", 1:10)
 #' dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric network
 #' dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
+#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric ppi
 #' hub_auc = coexpression_known_interactions_hub_auc(net = dummy_net, known = dummy_ppi)
 #' print(sprintf('Area under the precision-recall curve: %g', hub_auc$pr$auc.integral))
 #' print(sprintf('Area under the ROC curve: %g', hub_auc$roc$auc))
@@ -78,7 +78,7 @@ coexpression_known_interactions_hub_auc <- function (net, known,
                                                      na.ignore = "known",
                                                      neg.treat = "error")
 {
-  suppressPackageStartupMessages(require('PRROC'))
+  requireNamespace('PRROC', quietly = T)
 
   ### check arguments
   check_row_col_compatibility_of_net_and_known(net = net, known = known)
@@ -126,19 +126,23 @@ coexpression_known_interactions_hub_auc <- function (net, known,
   rm(list = c("net", "known"))
 
   ### area under the curve
-  probj = pr.curve(scores.class0 = net_centrality_values,
-                   weights.class0 = known_hub_centrality_values,
-                   curve = curve,
-                   max.compute = max.compute,
-                   min.compute = min.compute,
-                   rand.compute = rand.compute,
-                   dg.compute = dg.compute)
-  rocobj = roc.curve(scores.class0 = net_centrality_values,
-                     weights.class0 = known_hub_centrality_values,
-                     curve = curve,
-                     max.compute = max.compute,
-                     min.compute = min.compute,
-                     rand.compute = rand.compute)
+  probj = PRROC::pr.curve(
+    scores.class0 = net_centrality_values,
+    weights.class0 = known_hub_centrality_values,
+    curve = curve,
+    max.compute = max.compute,
+    min.compute = min.compute,
+    rand.compute = rand.compute,
+    dg.compute = dg.compute
+  )
+  rocobj = PRROC::roc.curve(
+    scores.class0 = net_centrality_values,
+    weights.class0 = known_hub_centrality_values,
+    curve = curve,
+    max.compute = max.compute,
+    min.compute = min.compute,
+    rand.compute = rand.compute
+  )
 
   return(list(pr = probj, roc = rocobj))
 }

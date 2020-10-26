@@ -58,10 +58,16 @@
 #' @examples
 #' genes = sprintf("G%d", 1:10)
 #' dummy_net = matrix(rnorm(length(genes)^2), nrow = length(genes), dimnames = list(genes, genes))
-#' dummy_net = abs((dummy_net + t(dummy_net))/2)                    # symmetric undirected nework
+#' dummy_net = abs((dummy_net + t(dummy_net))/2)                  # symmetric network
 #' dummy_ppi = abs(dummy_net + rnorm(length(dummy_net)))
-#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))    # symmetric known interaction probability
-#' auc_res = coexpression_known_interactions_auc(net = dummy_net, known = dummy_ppi, curve = T, max.compute = T, min.compute = T)
+#' dummy_ppi = (dummy_ppi + t(dummy_ppi)) / (2 * max(dummy_ppi))  # symmetric ppi
+#' auc_res = coexpression_known_interactions_auc(
+#'   net = dummy_net,
+#'   known = dummy_ppi,
+#'   curve = TRUE,
+#'   max.compute = TRUE,
+#'   min.compute = TRUE
+#' )
 #' print(sprintf('AUC under the precision-recall curve: %s', auc_res$pr$auc.integral))
 #' print(sprintf('AUC under the ROC curve: %s', auc_res$roc$auc))
 #' plot(auc_res$pr, max.plot = TRUE, min.plot = TRUE, fill.area = TRUE)
@@ -75,7 +81,7 @@ coexpression_known_interactions_auc <- function(net, known,
                                                 dg.compute=F,
                                                 na.ignore = "known",
                                                 neg.treat = "error"){
-  suppressPackageStartupMessages(require('PRROC'))
+  requireNamespace('PRROC', quietly = T)
 
   ### check arguments
   check_row_col_compatibility_of_net_and_known(net = net, known = known)
@@ -113,19 +119,23 @@ coexpression_known_interactions_auc <- function(net, known,
   known[na_idx] = NA
 
   subset_idx = lower.tri(net, diag = F) & !is.na(known)
-  probj = pr.curve(scores.class0 = net[subset_idx],
-                   weights.class0 = known[subset_idx],
-                   curve = curve,
-                   max.compute = max.compute,
-                   min.compute = min.compute,
-                   rand.compute = rand.compute,
-                   dg.compute = dg.compute)
-  rocobj = roc.curve(scores.class0 = net[subset_idx],
-                     weights.class0 = known[subset_idx],
-                     curve = curve,
-                     max.compute = max.compute,
-                     min.compute = min.compute,
-                     rand.compute = rand.compute)
+  probj = PRROC::pr.curve(
+    scores.class0 = net[subset_idx],
+    weights.class0 = known[subset_idx],
+    curve = curve,
+    max.compute = max.compute,
+    min.compute = min.compute,
+    rand.compute = rand.compute,
+    dg.compute = dg.compute
+  )
+  rocobj = PRROC::roc.curve(
+    scores.class0 = net[subset_idx],
+    weights.class0 = known[subset_idx],
+    curve = curve,
+    max.compute = max.compute,
+    min.compute = min.compute,
+    rand.compute = rand.compute
+  )
 
   return(list(pr = probj, roc = rocobj))
 }

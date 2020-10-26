@@ -19,7 +19,7 @@
 #' A data frame with the same set of columns as df.
 #' @examples
 #' my_df = data.frame(A=c(1,5,2,9,1), B = LETTERS[1:5], C=c(1,3,5,7,9))
-#' my_minmax_df = rminmax_df(my_df, col1='A', col2 = 'C')
+#' # my_minmax_df = rminmax_df(my_df, col1='A', col2 = 'C')
 
 rminmax_df <- function(df, col1 = colnames(df)[1], col2 = colnames(df)[2], unique = F){
   # return a dataframe with rowwise min-max values i.e.,

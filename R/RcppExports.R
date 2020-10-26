@@ -29,15 +29,15 @@ set_diag <- function(x, value) {
     invisible(.Call('_spice_set_diag', PACKAGE = 'spice', x, value))
 }
 
-update_rankprod_matrix <- function(rankprod_bigmem, ranks) {
-    invisible(.Call('_spice_update_rankprod_matrix', PACKAGE = 'spice', rankprod_bigmem, ranks))
+update_rankprod_matrix <- function(rankprod, ranks) {
+    invisible(.Call('_spice_update_rankprod_matrix', PACKAGE = 'spice', rankprod, ranks))
 }
 
 from_sampled_assoc_matrix_to_all_assoc_vector <- function(sampled_assoc, all_genes, from_dist = FALSE) {
     .Call('_spice_from_sampled_assoc_matrix_to_all_assoc_vector', PACKAGE = 'spice', sampled_assoc, all_genes, from_dist)
 }
 
-get_rankprod_vector_from_matrix <- function(rankprod_bigmem) {
-    .Call('_spice_get_rankprod_vector_from_matrix', PACKAGE = 'spice', rankprod_bigmem)
+get_rankprod_vector_from_matrix <- function(rankprod) {
+    .Call('_spice_get_rankprod_vector_from_matrix', PACKAGE = 'spice', rankprod)
 }
 

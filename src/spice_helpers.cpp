@@ -1,48 +1,18 @@
 #include <Rcpp.h>
 #include <cmath>
-
-// following instructions to use bigmemory in Rcpp
-// from https://gallery.rcpp.org/articles/using-bigmemory-with-rcpp/
-//
-// The next line is all it takes to find the bigmemory
-// headers -- thanks to the magic of Rcpp attributes,
-// and as bigmemory now accesses Boost headers from the BH package,
-// we need to make sure we do so as well in this Rcpp::depends comment.
-//
-// Boost headers can generate some warning with the default compilation
-// options for R.  To suppress these, we can enable C++11 mode which gets
-// us 'long long' types.
-//
-// If your compiler is to old, just disable / remove the following line
-// [[Rcpp::plugins(cpp11)]]
-
-// Ensure R uses the headers for Boost (a dependency) and bigmemory
-//
-// [[Rcpp::depends(BH, bigmemory)]]
-#include <bigmemory/MatrixAccessor.hpp>
-
-#include <numeric>
-
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-void update_rankprod_matrix(SEXP rankprod_bigmem, const NumericVector ranks){
-  // tell Rcpp what class to use for big.matrix objects
-  Rcpp::XPtr<BigMatrix> rankprod(rankprod_bigmem);
-  // Create the matrix accessor so we can get at the elements of the matrix.
-  MatrixAccessor<double> rankprod_acc(*rankprod);
-
-  size_t nr = rankprod->nrow();
+void update_rankprod_matrix(NumericMatrix rankprod, const NumericVector ranks){
+  size_t nr = rankprod.nrow();
   if(ranks.size() != nr)
     stop("sizes of rankprod and ranks are not compatible.");
   for(size_t i=0; i<nr; i++){
     double cur_rank = ranks.at(i);
     if(NumericVector::is_na(cur_rank))
       continue;
-    // bigmemory accesses column first, then row
-    // (i,j)-th entry = rankprod_acc[j][i] -- notice order of j and i.
-    rankprod_acc[0][i] = rankprod_acc[0][i] + log(cur_rank);
-    rankprod_acc[1][i] = rankprod_acc[1][i] + 1;
+    rankprod.at(i,0) = rankprod.at(i,0) + log(cur_rank);
+    rankprod.at(i,1) = rankprod.at(i,1) + 1;
   }
 }
 
@@ -121,18 +91,13 @@ NumericVector from_sampled_assoc_matrix_to_all_assoc_vector(
 }
 
 // [[Rcpp::export]]
-NumericVector get_rankprod_vector_from_matrix(SEXP rankprod_bigmem){
-  // tell Rcpp what class to use for big.matrix objects
-  Rcpp::XPtr<BigMatrix> rankprod(rankprod_bigmem);
-  // Create the matrix accessor so we can get at the elements of the matrix
-  MatrixAccessor<double> rankprod_acc(*rankprod);
-
-  size_t nr = rankprod->nrow();
+NumericVector get_rankprod_vector_from_matrix(NumericMatrix rankprod){
+  size_t nr = rankprod.nrow();
   NumericVector rankprod_vector(nr, NA_REAL);
   for(size_t i=0; i<nr; i++){
-    double count = rankprod_acc[1][i];
+    double count = rankprod.at(i,1);
     if(count > 0){
-      rankprod_vector(i) = exp(rankprod_acc[0][i] / count);
+      rankprod_vector(i) = exp(rankprod.at(i,0) / count);
     }
   }
   return rankprod_vector;
