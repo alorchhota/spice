@@ -5,7 +5,7 @@ NumericVector get_lower_triangle_vector(const NumericMatrix x, const bool diagon
 
 size_t find_component(size_t node,
                       std::vector<size_t> &node_2_component,
-                      std::map<size_t, std::vector<size_t>> &component_2_nodes,
+                      std::map<size_t, std::vector<size_t> > &component_2_nodes,
                       size_t &last_component){
   size_t comp = node_2_component.at(node);
   // create if does not exist
@@ -22,7 +22,7 @@ size_t find_component(size_t node,
 void union_component(size_t node1,
                      size_t node2,
                      std::vector<size_t> &node_2_component,
-                     std::map<size_t, std::vector<size_t>> &component_2_nodes){
+                     std::map<size_t, std::vector<size_t> > &component_2_nodes){
   size_t c1 = node_2_component.at(node1);
   size_t c2 = node_2_component.at(node2);
   std::vector<size_t>& c1_nodes = component_2_nodes[c1];
@@ -55,7 +55,7 @@ DataFrame kruskal_mst_c(const NumericMatrix x, const bool maximum=false, const b
     stop("x must be a square matrix.");
 
   std::vector<size_t> node_2_component(n_gene, 0);
-  std::map<size_t, std::vector<size_t>> component_2_nodes;
+  std::map<size_t, std::vector<size_t> > component_2_nodes;
   size_t last_component = 0;
   std::vector<double> MST_from(n_gene-1);
   std::vector<double> MST_to(n_gene-1);
