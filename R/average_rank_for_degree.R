@@ -15,12 +15,12 @@
 #'
 #' @details
 #' Each value in \code{known} must be in the range \[0, 1\], where
-#' a nonzero value indicates the presence of an edge.
-#' While the values in \code{net} are not limited to any range,
-#' each value should represent the relative probability that
-#' the corresponding edge is true. In other words, larger values should
-#' represent higher confidence in corresponding edges.
+#' a nonzero value indicates the presence of an edge. 
 #' Values in \code{net} must be unsigned.
+#' Each value should represent the relative probability that
+#' the corresponding edge is true. In other words, larger values should
+#' represent higher confidence in corresponding edges. A NA value will be 
+#' treated as an edge with a -Inf value, i.e. an edge with very low confidence.
 #'
 #' Both \code{net} and \code{known} must be square matrices of same dimension.
 #' Either both or none of the matrices should have row and column names.
@@ -92,6 +92,9 @@ average_rank_for_degree <- function(net, known, degrees){
 
   ### ensure known is binary
   known[known != 0] = 1
+  
+  ### handle NA values in net
+  net[is.na(net)]=-Inf
   
   ### convert net and known to a matrix
   if(!is.matrix(net))
