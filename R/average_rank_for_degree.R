@@ -47,7 +47,11 @@
 #'   known = dummy_ppi,
 #'   degrees = degrees
 #' )
-#' plot(average_ranks$degrees, average_ranks$average_ranks)
+#' barplot(average_ranks$average_ranks, main = "Average Ranks of Edges in Learned Network", 
+#' xlab = "Known Interaction Degree", ylab = "Average Rank", names.arg = average_ranks$degrees)
+#' ar = average_ranks$average_ranks
+#' barplot(c(ar[1] - ar[2], ar[2] - ar[3]), main = "Differences between Average Ranks of Learned Edges of Different Known Degrees", 
+#' xlab = "Difference in Average Rank", ylab = "Known Interaction Degrees", names.arg = c("1-2", "2-3"))
 
 requireNamespace('igraph', quietly = T)
 
