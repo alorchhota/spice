@@ -1,6 +1,6 @@
 #' Average rank of edges corresponding to known gene-gene interactions of a specific degree.
 #'
-#' This function computes the average rank of edges in a reconstructed network where these 
+#' This function computes the average rank of edges in a reconstructed network, where these 
 #' edges correspond to a specific degree in a known gene-gene interaction network. Degree 1 
 #' corresponds to first degree edges, while higher degrees correspond to indirect interactions
 #' in the known interaction network.
