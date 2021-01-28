@@ -11,7 +11,7 @@
 #' @param known matrix or data.frame. A gene x gene matrix representing the probability
 #' that edges between genes true. See details.
 #'
-#' @param degrees list. A list of positive-valued degrees in the STRING network.
+#' @param degrees list. A list of positive-valued degrees in the known interaction network.
 #'
 #' @details
 #' Each value in \code{known} must be in the range \[0, 1\], where
@@ -61,7 +61,7 @@ find_motif = function(paths, dist){
   return(paths == dist)
 }
 
-get_edge_ranks = function(network){ # Note: highest value corresponds to highest rank
+get_edge_ranks = function(network){
   network[upper.tri(network, diag = TRUE)] = NA
   
   output = matrix(rank(-network, na.last = "keep", ties.method = "average"), nrow = nrow(network), ncol = ncol(network))
