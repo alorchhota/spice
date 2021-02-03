@@ -8,7 +8,7 @@ mean_rank_for_known_geodesic_distance(
   net,
   known,
   d = 1:3,
-  score.threshold = 1e-10
+  known.threshold = 1e-10
 )
 }
 \arguments{
@@ -20,8 +20,8 @@ that edges between genes true. See details.}
 
 \item{d}{integer vector. A list of positive-valued geodesic distances in the known interaction network.}
 
-\item{score.threshold}{numeric. The value must be in the rage [0,1].
-If known interaction score is greater than or equal to \code{score.threshold},
+\item{known.threshold}{numeric. The value must be in the rage [0,1].
+If known interaction weight is greater than or equal to \code{known.threshold},
 the corresponding edge is considered true.}
 }
 \value{
@@ -38,7 +38,7 @@ in the known interaction network.
 }
 \details{
 Each value in \code{known} must be in the range [0, 1], where
-a value greater than or equal to \code{score.threshold} indicates
+a value greater than or equal to \code{known.threshold} indicates
 the presence of an edge.
 A \code{NA} value will be treated as an edge with a zero value.
 
@@ -64,8 +64,8 @@ dummy_ppi = matrix(rbinom(length(genes)^2, 1 , 0.5), nrow = length(genes), dimna
 dummy_ppi[lower.tri(dummy_ppi)] = t(dummy_ppi)[lower.tri(dummy_ppi)]  # symmetric ppi
 d = 1:3
 mean_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
-                                                      known = dummy_ppi,
-                                                      d = d)
+                                                   known = dummy_ppi,
+                                                   d = d)
 barplot(
   mean_ranks,
   main = "Mean ranks of edges in learned network",

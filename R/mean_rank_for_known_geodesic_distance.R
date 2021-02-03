@@ -15,13 +15,13 @@
 #'
 #' @param d integer vector. A list of positive-valued geodesic distances in the known interaction network.
 #'
-#' @param score.threshold numeric. The value must be in the rage \[0,1\].
-#' If known interaction score is greater than or equal to \code{score.threshold},
+#' @param known.threshold numeric. The value must be in the rage \[0,1\].
+#' If known interaction weight is greater than or equal to \code{known.threshold},
 #' the corresponding edge is considered true.
 #'
 #' @details
 #' Each value in \code{known} must be in the range \[0, 1\], where
-#' a value greater than or equal to \code{score.threshold} indicates 
+#' a value greater than or equal to \code{known.threshold} indicates 
 #' the presence of an edge. 
 #' A \code{NA} value will be treated as an edge with a zero value.
 #' 
@@ -51,8 +51,8 @@
 #' dummy_ppi[lower.tri(dummy_ppi)] = t(dummy_ppi)[lower.tri(dummy_ppi)]  # symmetric ppi
 #' d = 1:3
 #' mean_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
-#'                                                       known = dummy_ppi,
-#'                                                       d = d)
+#'                                                    known = dummy_ppi,
+#'                                                    d = d)
 #' barplot(
 #'   mean_ranks,
 #'   main = "Mean ranks of edges in learned network",
@@ -74,7 +74,7 @@
 mean_rank_for_known_geodesic_distance <- function(net,
                                                   known,
                                                   d = 1:3,
-                                                  score.threshold = 1e-10) {
+                                                  known.threshold = 1e-10) {
   requireNamespace('igraph', quietly = T)
   requireNamespace('data.table', quietly = T)
   
@@ -87,11 +87,11 @@ mean_rank_for_known_geodesic_distance <- function(net,
     stop("d must be a vector of positive integers.")
   }
   
-  if(!is.numeric(score.threshold) ||
-     length(score.threshold) != 1 ||
-     score.threshold < 0 ||
-     score.threshold > 1) {
-    stop("score.threshold must be a number between 0 and 1.")
+  if(!is.numeric(known.threshold) ||
+     length(known.threshold) != 1 ||
+     known.threshold < 0 ||
+     known.threshold > 1) {
+    stop("known.threshold must be a number between 0 and 1.")
   } 
   
   ### convert net and known to a matrix
@@ -117,8 +117,8 @@ mean_rank_for_known_geodesic_distance <- function(net,
   check_matrix_symmetry_of_net_and_known(net = net, known = known)
   
   ### ensure known is binary
-  known[known >= score.threshold] = 1
-  known[known < score.threshold] = 0
+  known[known >= known.threshold] = 1
+  known[known < known.threshold] = 0
   
   ### compute mean ranks for distances
   ranked_net = get_edge_ranks(net)
