@@ -2,7 +2,7 @@
 % Please edit documentation in R/mean_rank_for_known_geodesic_distance.R
 \name{mean_rank_for_known_geodesic_distance}
 \alias{mean_rank_for_known_geodesic_distance}
-\title{Average rank of edges corresponding to known gene-gene interactions of a specific distance.}
+\title{Mean rank of edges corresponding to known gene-gene interactions of a specific distance.}
 \usage{
 mean_rank_for_known_geodesic_distance(
   net,
@@ -21,18 +21,18 @@ that edges between genes true. See details.}
 \item{d}{integer vector. A list of positive-valued geodesic distances in the known interaction network.}
 
 \item{score.threshold}{numeric. The value must be in the rage [0,1].
-If known interaction score is equal to or greater than \code{score.threshold},
+If known interaction score is greater than or equal to \code{score.threshold},
 the corresponding edge is considered true.}
 }
 \value{
 A numeric vector of the same length as \code{d} containing
-the average ranks corresponding to the distance values in \code{d}.
+the mean ranks corresponding to the distance values in \code{d}.
 }
 \description{
-This function computes the average rank of edges in a reconstructed network,
+This function computes the mean rank of edges in a reconstructed network,
 where each edge corresponds to two genes with a given geodesic distance
 in the known gene-gene interaction network.
-Distance of 1 corresponds to direct interactions,
+A distance of 1 corresponds to direct interactions,
 while higher distances correspond to indirect interactions
 in the known interaction network.
 }
@@ -63,24 +63,24 @@ dummy_net = abs((dummy_net + t(dummy_net))/2)                  # symmetric netwo
 dummy_ppi = matrix(rbinom(length(genes)^2, 1 , 0.5), nrow = length(genes), dimnames = list(genes, genes))
 dummy_ppi[lower.tri(dummy_ppi)] = t(dummy_ppi)[lower.tri(dummy_ppi)]  # symmetric ppi
 d = 1:3
-average_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
+mean_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
                                                       known = dummy_ppi,
                                                       d = d)
 barplot(
-  average_ranks,
-  main = "Average ranks of edges in learned network",
+  mean_ranks,
+  main = "Mean ranks of edges in learned network",
   xlab = "Known interaction distance",
-  ylab = "Average Rank",
+  ylab = "Mean Rank",
   names.arg = d
 )
 barplot(
   c(
-    average_ranks[1] - average_ranks[2],
-    average_ranks[2] - average_ranks[3]
+    mean_ranks[1] - mean_ranks[2],
+    mean_ranks[2] - mean_ranks[3]
   ),
-  main = "Differences between average ranks of two known distances",
+  main = "Differences between mean ranks of two known distances",
   xlab = "Known geodesic distances",
-  ylab = "Difference in average rank",
+  ylab = "Difference in mean rank",
   names.arg = c("1-2", "2-3")
 )
 }
