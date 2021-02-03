@@ -1,9 +1,9 @@
-#' Average rank of edges corresponding to known gene-gene interactions of a specific distance.
+#' Mean rank of edges corresponding to known gene-gene interactions of a specific distance.
 #'
-#' This function computes the average rank of edges in a reconstructed network, 
+#' This function computes the mean rank of edges in a reconstructed network, 
 #' where each edge corresponds to two genes with a given geodesic distance 
 #' in the known gene-gene interaction network. 
-#' Distance of 1 corresponds to direct interactions, 
+#' A distance of 1 corresponds to direct interactions, 
 #' while higher distances correspond to indirect interactions 
 #' in the known interaction network.
 #'
@@ -14,8 +14,9 @@
 #' that edges between genes true. See details.
 #'
 #' @param d integer vector. A list of positive-valued geodesic distances in the known interaction network.
+#'
 #' @param score.threshold numeric. The value must be in the rage \[0,1\].
-#' If known interaction score is equal to or greater than \code{score.threshold},
+#' If known interaction score is greater than or equal to \code{score.threshold},
 #' the corresponding edge is considered true.
 #'
 #' @details
@@ -39,7 +40,7 @@
 #' Diagonal entries in the matrices are ignored.
 #'
 #' @return A numeric vector of the same length as \code{d} containing 
-#' the average ranks corresponding to the distance values in \code{d}.
+#' the mean ranks corresponding to the distance values in \code{d}.
 #'
 #' @export
 #' @examples
@@ -49,24 +50,24 @@
 #' dummy_ppi = matrix(rbinom(length(genes)^2, 1 , 0.5), nrow = length(genes), dimnames = list(genes, genes))
 #' dummy_ppi[lower.tri(dummy_ppi)] = t(dummy_ppi)[lower.tri(dummy_ppi)]  # symmetric ppi
 #' d = 1:3
-#' average_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
+#' mean_ranks = mean_rank_for_known_geodesic_distance(net = dummy_net,
 #'                                                       known = dummy_ppi,
 #'                                                       d = d)
 #' barplot(
-#'   average_ranks,
-#'   main = "Average ranks of edges in learned network",
+#'   mean_ranks,
+#'   main = "Mean ranks of edges in learned network",
 #'   xlab = "Known interaction distance",
-#'   ylab = "Average Rank",
+#'   ylab = "Mean Rank",
 #'   names.arg = d
 #' )
 #' barplot(
 #'   c(
-#'     average_ranks[1] - average_ranks[2],
-#'     average_ranks[2] - average_ranks[3]
+#'     mean_ranks[1] - mean_ranks[2],
+#'     mean_ranks[2] - mean_ranks[3]
 #'   ),
-#'   main = "Differences between average ranks of two known distances",
+#'   main = "Differences between mean ranks of two known distances",
 #'   xlab = "Known geodesic distances",
-#'   ylab = "Difference in average rank",
+#'   ylab = "Difference in mean rank",
 #'   names.arg = c("1-2", "2-3")
 #' )
 
@@ -119,41 +120,41 @@ mean_rank_for_known_geodesic_distance <- function(net,
   known[known >= score.threshold] = 1
   known[known < score.threshold] = 0
   
-  ### compute average ranks for distances
+  ### compute mean ranks for distances
   ranked_net = get_edge_ranks(net)
   paths = find_shortest_paths(known)
-  average_ranks = sapply(d, function(distance){
-    value = find_motif(paths, distance)
-    average_rank = determine_avg_rank(ranked_net, value)
+  mean_ranks = sapply(d, function(distance){
+    motif = find_motif(paths, distance)
+    mean_rank = determine_mean_rank(ranked_net, motif)
   })
   
-  return(average_ranks)
+  return(mean_ranks)
 }
 
-find_shortest_paths = function(network){
-  g = igraph::graph_from_adjacency_matrix(network, mode = c("undirected"), diag = FALSE)
+find_shortest_paths = function(net){
+  g = igraph::graph_from_adjacency_matrix(net, mode = c("undirected"), diag = FALSE)
   paths = igraph::distances(g)
   return(paths)
 }
 
-find_motif = function(paths, dist){
-  return(paths == dist)
+find_motif = function(paths, distance){
+  return(paths == distance)
 }
 
-get_edge_ranks = function(network){
-  network[upper.tri(network, diag = TRUE)] = NA
+get_edge_ranks = function(net){
+  net[upper.tri(net, diag = TRUE)] = NA
   
   output = matrix(
-    data.table::frank(as.numeric(-network), na.last = "keep", ties.method = "average"),
-    nrow = nrow(network),
-    ncol = ncol(network)
+    data.table::frank(as.numeric(-net), na.last = "keep", ties.method = "average"),
+    nrow = nrow(net),
+    ncol = ncol(net)
   )
   output = pmax(output, t(output), na.rm = T)
-  rownames(output) = rownames(network)
-  colnames(output) = colnames(network)
+  rownames(output) = rownames(net)
+  colnames(output) = colnames(net)
   return(output)
 }
 
-determine_avg_rank = function(ranked_network, edges){
-  return(mean(ranked_network[edges]))
+determine_mean_rank = function(ranked_net, edges){
+  return(mean(ranked_net[edges]))
 }
