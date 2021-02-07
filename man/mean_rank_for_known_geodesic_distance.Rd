@@ -37,17 +37,22 @@ while higher distances correspond to indirect interactions
 in the known interaction network.
 }
 \details{
-Each value in \code{known} must be in the range [0, 1], where
-a value greater than or equal to \code{known.threshold} indicates
-the presence of an edge.
-A \code{NA} value will be treated as an edge with a zero value.
-
 Values in \code{net} must be unsigned.
 Each value should represent the relative probability that
 the corresponding edge is true. In other words, larger values should
 represent higher confidence in corresponding edges.
 A \code{NA} value will be treated as an edge with a \code{-Inf} value,
 i.e. an edge with very low confidence.
+
+Each value in \code{known} must be in the range [0, 1], where
+a value greater than or equal to \code{known.threshold} indicates
+the presence of an edge.
+A \code{NA} in \code{known} indicates there is no known interaction between
+the corresponding genes (similar to zeros) and the geodesic distance
+between these genes is considered indeterminate (unlike zeros)
+i.e., not included in the edges with a given finite geodesic distance.
+The corresponding edge is also excluded while computing ranks in the
+reconstructed network \code{net}.
 
 Both \code{net} and \code{known} must be square matrices of same dimension.
 Either both or none of the matrices should have row and column names.

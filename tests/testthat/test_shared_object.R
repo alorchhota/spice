@@ -11,9 +11,9 @@ test_that("sharing objects at the same time", {
                                 sprintf("Sample%s", seq_len(n_sample))))
   cl <- makeCluster(10)
   tmp <- parallel::clusterEvalQ(cl, {
-    library('spice')
-    # library(devtools)
-    # devtools::load_all()
+    # library('spice')
+    library(devtools)
+    devtools::load_all()
   })
   on.exit(stopCluster(cl))
   doParallel::registerDoParallel(cl)

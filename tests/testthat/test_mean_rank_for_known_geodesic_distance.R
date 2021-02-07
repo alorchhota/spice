@@ -1,4 +1,4 @@
-context("mean_rank_for_known_geodesic_distance")
+context("Mean rank for known geodesic distance")
 
 get_5x5_known_matrix <- function(){
   n_gene = 5
@@ -40,4 +40,16 @@ test_that("mean rank computation", {
                                                        known = known,
                                                        d = 1:2)
   expect_true(ranks[1] == 4.25 && ranks[2] == 5)
+})
+
+
+test_that("mean rank computation with NAs", {
+  known = get_5x5_known_matrix()
+  known["Gene1", "Gene4"] = known["Gene4", "Gene1"] = NA
+  net = get_5x5_net_matrix()
+  
+  ranks = spice::mean_rank_for_known_geodesic_distance(net = net,
+                                                       known = known,
+                                                       d = 1:2)
+  expect_true(ranks[1] == 3.5 && ranks[2] == 5)
 })

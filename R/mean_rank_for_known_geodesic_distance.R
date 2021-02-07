@@ -20,17 +20,22 @@
 #' the corresponding edge is considered true.
 #'
 #' @details
-#' Each value in \code{known} must be in the range \[0, 1\], where
-#' a value greater than or equal to \code{known.threshold} indicates 
-#' the presence of an edge. 
-#' A \code{NA} value will be treated as an edge with a zero value.
-#' 
 #' Values in \code{net} must be unsigned.
 #' Each value should represent the relative probability that
 #' the corresponding edge is true. In other words, larger values should
 #' represent higher confidence in corresponding edges. 
 #' A \code{NA} value will be treated as an edge with a \code{-Inf} value, 
 #' i.e. an edge with very low confidence.
+#' 
+#' Each value in \code{known} must be in the range \[0, 1\], where
+#' a value greater than or equal to \code{known.threshold} indicates 
+#' the presence of an edge. 
+#' A \code{NA} in \code{known} indicates there is no known interaction between 
+#' the corresponding genes (similar to zeros) and the geodesic distance 
+#' between these genes is considered indeterminate (unlike zeros) 
+#' i.e., not included in the edges with a given finite geodesic distance.
+#' The corresponding edge is also excluded while computing ranks in the 
+#' reconstructed network \code{net}.
 #'
 #' Both \code{net} and \code{known} must be square matrices of same dimension.
 #' Either both or none of the matrices should have row and column names.
@@ -110,8 +115,10 @@ mean_rank_for_known_geodesic_distance <- function(net,
   }
   
   ### handle NA values
+  known.na.idx = is.na(known)
+  #known[known.na.idx] = 0
   net[is.na(net)] = -Inf
-  known[is.na(known)] = 0
+  net[known.na.idx] = NA # excluded from ranking, NA ranked after -Inf
   
   ### check matrix symmetry
   check_matrix_symmetry_of_net_and_known(net = net, known = known)
@@ -123,6 +130,7 @@ mean_rank_for_known_geodesic_distance <- function(net,
   ### compute mean ranks for distances
   ranked_net = get_edge_ranks(net)
   paths = find_shortest_paths(known)
+  paths[known.na.idx] = Inf    # ignore known NA edges in computing mean ranks
   mean_ranks = sapply(d, function(distance){
     motif = find_motif(paths, distance)
     mean_rank = determine_mean_rank(ranked_net, motif)
