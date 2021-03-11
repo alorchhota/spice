@@ -11,6 +11,7 @@ spice(
   frac.gene = 0.8,
   frac.sample = 0.8,
   n.cores = 1,
+  rank.types = "CM",
   rank.ties = "average",
   filter.mat = NULL,
   weight.method = "qnorm",
@@ -37,6 +38,11 @@ This must be one of "pearson" (default), "spearman", "mi.empirical", "mi.spearma
 \item{frac.sample}{numeric. Fraction of samples used in each iteration.}
 
 \item{n.cores}{numeric. The number of cores to use.}
+
+\item{rank.types}{a character string indicating types of rankings computed in each iteration.
+\code{"C"} indicates ranking of correlation values,
+\code{"M"} indicates ranking using on a maximum spanning tree,
+\code{"CM"} (default) indicates both types of rankings.}
 
 \item{rank.ties}{a character string indicating how ties are treated in ranking.
 Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}.

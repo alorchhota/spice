@@ -10,6 +10,10 @@
 #' @param frac.gene numeric. Fraction of genes used in each iteration.
 #' @param frac.sample numeric. Fraction of samples used in each iteration.
 #' @param n.cores numeric. The number of cores to use.
+#' @param rank.types a character string indicating types of rankings computed in each iteration.
+#' \code{"C"} indicates ranking of correlation values,
+#' \code{"M"} indicates ranking using on a maximum spanning tree,
+#' \code{"CM"} (default) indicates both types of rankings.
 #' @param rank.ties a character string indicating how ties are treated in ranking.
 #' Accepted values include \code{"average", "first", "last", "random", "max", "min", "dense"}.
 #' For details, see \code{ties.method} parameter of \code{\link[data.table]{frank}}.
@@ -55,6 +59,7 @@ spice <- function(expr,
                   frac.gene = 0.8,
                   frac.sample= 0.8,
                   n.cores=1,
+                  rank.types = "CM",
                   rank.ties = "average",
                   filter.mat = NULL,
                   weight.method='qnorm',
@@ -75,6 +80,8 @@ spice <- function(expr,
   stopifnot(is.numeric(frac.gene) && frac.gene > 0 && frac.gene <= 1)
   stopifnot(is.numeric(frac.sample) && frac.sample > 0 && frac.sample <= 1)
   stopifnot(is.numeric(n.cores) && n.cores >= 1)
+  rank_types = parse_delimitted_string(rank.types, delim = "")
+  stopifnot(is.character(rank.types) && length(rank_types) > 0 && all(rank_types %in% c("C", "M")))
   stopifnot(rank.ties %in% c("average", "first", "last", "random", "max", "min", "dense"))
   stopifnot(is.null(filter.mat) || (is.matrix(filter.mat) && setequal(rownames(filter.mat), rownames(expr)) && setequal(colnames(filter.mat), rownames(expr))))
   stopifnot(weight.method %in% c('inverse.rank', 'qnorm'))
@@ -102,7 +109,7 @@ spice <- function(expr,
   expr_df = SharedObject::share(as.matrix(expr))
   rm("expr")
   tmp = gc(verbose = F)
-
+  
   keep.mat = NULL
   if(!is.null(filter.mat)){
     # filter out edge if filter.mat contains > 0 or TRUE // keep if filter.mat <= 0 or FALSE
@@ -171,7 +178,7 @@ spice <- function(expr,
     }
   }
 
-  get_pairwise_assoc_per_iteraction <- function(it, frac.gene, frac.sample, use.keep.mat = F, verbose = F, seed = NULL){
+  get_pairwise_assoc_per_iteraction <- function(it, frac.gene, frac.sample, use.keep.mat = F, verbose = F, seed = NULL, rank_types = c("C", "M")){
     verbose_print(sprintf('spice iteration# %d', it), verbose = verbose)
 
     ### sample expression data
@@ -201,34 +208,38 @@ spice <- function(expr,
     tmp = gc(verbose = F)
 
     ### update wgcna rank-prod
-    wgcna.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
-      sampled_assoc = expr_sim,
-      all_genes = rownames(expr_df),
-      from_dist = F)
-    wgcna.rank = data.table::frankv(wgcna.weights, order = -1L, na.last = "keep", ties.method = rank.ties)
-    rm("wgcna.weights")
-    tmp = gc(verbose = F)
-    locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix, wgcna.rank)
-    flock::unlock(locked)
-    rm("wgcna.rank")
-    tmp = gc(verbose = F)
+    if("C" %in% rank_types) {
+      wgcna.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
+        sampled_assoc = expr_sim,
+        all_genes = rownames(expr_df),
+        from_dist = F)
+      wgcna.rank = data.table::frankv(wgcna.weights, order = -1L, na.last = "keep", ties.method = rank.ties)
+      rm("wgcna.weights")
+      tmp = gc(verbose = F)
+      locked <- flock::lock(rankprod_lock)
+      update_rankprod_matrix(rankprod_matrix, wgcna.rank)
+      flock::unlock(locked)
+      rm("wgcna.rank")
+      tmp = gc(verbose = F)
+    }
 
     ### update spanning-tree rank-prod
-    igraph::E(sampled_mst)$weight = 1 - abs(igraph::E(sampled_mst)$weight)  # convert correlation (or normalized mutual information) to distance
-    sampled_distances = igraph::distances(sampled_mst)
-    spanningtree.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
-      sampled_assoc = sampled_distances,
-      all_genes = rownames(expr_df),
-      from_dist = T)
-    spanningtree.rank = data.table::frankv(spanningtree.weights, order = -1L, na.last = "keep", ties.method = rank.ties)
-    rm("spanningtree.weights")
-    tmp = gc(verbose = F)
-    locked <- flock::lock(rankprod_lock)
-    update_rankprod_matrix(rankprod_matrix, spanningtree.rank)
-    flock::unlock(locked)
-    rm("spanningtree.rank")
-    tmp = gc(verbose = F)
+    if("M" %in% rank_types) {
+      igraph::E(sampled_mst)$weight = 1 - abs(igraph::E(sampled_mst)$weight)  # convert correlation (or normalized mutual information) to distance
+      sampled_distances = igraph::distances(sampled_mst)
+      spanningtree.weights = from_sampled_assoc_matrix_to_all_assoc_vector(
+        sampled_assoc = sampled_distances,
+        all_genes = rownames(expr_df),
+        from_dist = T)
+      spanningtree.rank = data.table::frankv(spanningtree.weights, order = -1L, na.last = "keep", ties.method = rank.ties)
+      rm("spanningtree.weights")
+      tmp = gc(verbose = F)
+      locked <- flock::lock(rankprod_lock)
+      update_rankprod_matrix(rankprod_matrix, spanningtree.rank)
+      flock::unlock(locked)
+      rm("spanningtree.rank")
+      tmp = gc(verbose = F)
+    }
 
     return(NA)
   }
@@ -236,7 +247,7 @@ spice <- function(expr,
   ### run iterations
   if(n.cores == 1){
     for(it in seq_len(iter)){
-      get_pairwise_assoc_per_iteraction(it, frac.gene=frac.gene, frac.sample=frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
+      get_pairwise_assoc_per_iteraction(it, frac.gene=frac.gene, frac.sample=frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed, rank_types = rank_types)
     }
   } else {
     if(verbose>0){
@@ -260,7 +271,7 @@ spice <- function(expr,
 
     doParallel::registerDoParallel(cl)
     tmp <- foreach::foreach(it = seq_len(iter)) %dopar% {
-      get_pairwise_assoc_per_iteraction(it, frac.gene, frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed)
+      get_pairwise_assoc_per_iteraction(it, frac.gene, frac.sample, use.keep.mat = !is.null(keep.mat), verbose = verbose, seed = seed, rank_types = rank_types)
     }
     tmp = gc(verbose = F)
   }
