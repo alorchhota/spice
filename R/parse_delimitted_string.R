@@ -5,7 +5,6 @@
 #' @param delim character. The delimiter.
 #' @param rm.empty logical. If TRUE, removes every empty string after parsing.
 #' @return A vector of parsed character strings.
-#' @export
 #' @examples 
 #' x = "one,two,three,"
 #' parsed_strings = parse_delimitted_string(x, delim = ',', rm.empty = T)
